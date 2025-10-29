@@ -1,0 +1,38 @@
+volumes:
+  orderer_ord2_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data_hlf1/fabric/orderer_ord2_data
+
+networks:
+  fabric_net:
+    name: fabric_net
+
+services:
+  orderer.ord2.testbed.local:
+    user: 1000:988
+    container_name: orderer.ord2.testbed.local
+    image: hyperledger/fabric-orderer:${FABRIC_VERSION}
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LOCALMSPID=Ord2MSP
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=5004
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:5005
+      - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:5006
+    working_dir: /root
+    command: orderer
+    volumes:
+      - ../config/orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
+      - ../organizations/ordererOrganizations/ord2.testbed.local/orderers/orderer.ord2.testbed.local:/etc/hyperledger/fabric:ro
+      - orderer_ord2_data:/var/hyperledger
+    ports:
+      - 5004:5004
+      - 5005:5005
+      - 5006:5006
+    networks:
+      - fabric_net

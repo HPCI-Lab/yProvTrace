@@ -1,0 +1,34 @@
+{
+    "name": "ccp-${ORG_NAME}",
+    "version": "1.0.0",
+    "client": {
+        "organization": "${ORG_NAME}",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "${ORG_NAME}": {
+            "mspid": "${MSPID}",
+            "peers": [
+                "${PEER_HOSTNAME}"
+            ]
+        }
+    },
+    "peers": {
+        "${PEER_HOSTNAME}": {
+            "url": "grpcs://${ENDPOINT}",
+            "tlsCACerts": {
+                "path": "${ORG_CERT_PATH}"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "${PEER_HOSTNAME}",
+                "hostnameOverride": "${PEER_HOSTNAME}"
+            }
+        }
+    }
+}

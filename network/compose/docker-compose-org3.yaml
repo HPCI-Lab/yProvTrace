@@ -1,0 +1,45 @@
+volumes:
+  peer0_org3_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data_hlf1/fabric/peer0_org3_data
+
+networks:
+  fabric_net:
+    name: fabric_net
+
+services:
+  peer0.org3.testbed.local:
+    user: 1000:988
+    container_name: peer0.org3.testbed.local
+    image: hyperledger/fabric-peer:${FABRIC_VERSION}
+    labels:
+      service: hyperledger-fabric
+    environment:
+      # General variables
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric_net
+      # Peer specific variables
+      - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_PEER_ID=peer0.org3.testbed.local
+      - CORE_PEER_ADDRESS=peer0.org3.testbed.local:6007
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:6007
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org3.testbed.local:6008
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:6008
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org3.testbed.local:6007
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.testbed.local:6007
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.org3.testbed.local:6009
+    working_dir: /root
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../config/core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      - ../organizations/peerOrganizations/org3.testbed.local/peers/peer0.org3.testbed.local:/etc/hyperledger/fabric:ro
+      - peer0_org3_data:/var/hyperledger/production
+    ports:
+      - 6007:6007
+      - 6009:6009
+    networks:
+      - fabric_net

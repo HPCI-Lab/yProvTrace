@@ -1,0 +1,11 @@
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.testbed.local
+    EnableNodeOUs: true
+    Template: 
+      Count: 1 # Number of peers per organization
+      SANS:
+        - localhost
+        - hlf1.disi.unitn.it
+    Users:
+      Count: 3 # Number of users (excluding admin) per organization
