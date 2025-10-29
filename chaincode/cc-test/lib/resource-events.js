@@ -2,11 +2,11 @@
 
 const { Contract } = require('fabric-contract-api');
 
-/*
-	0 = UNKNOWN
-	1 = VALID
-	2 = REVOKED
-*/
+const Status = {
+    UNKNOWN: 0,
+	VALID: 1,
+	REVOKED: 2
+};
 
 class ResourceEvents extends Contract {
 
@@ -22,7 +22,7 @@ class ResourceEvents extends Contract {
 			hash: hash,
 			timestamp: timestamp,
 			owners: owners,
-			status: 0
+			status: Status.UNKNOWN
 		};
 
 		const resourceBuffer = Buffer.from(JSON.stringify(resource));
@@ -39,8 +39,14 @@ class ResourceEvents extends Contract {
 		
 		const resourceJSON = await ctx.stub.getState(pid);
 		const resource = JSON.parse(resourceJSON.toString());
-		resource.status = parseInt(newStatus);
 
+		// Check that the new status is valid
+		if (!Object.values(Status).includes(parseInt(newStatus))) {
+			throw new Error(`The status ${newStatus} is not valid`);
+		}
+		
+		// Update the status
+		resource.status = parseInt(newStatus);
 		const resourceBuffer = Buffer.from(JSON.stringify(resource));
 		await ctx.stub.putState(pid, resourceBuffer);
 		ctx.stub.setEvent('UpdateResourceStatus', resourceBuffer);
