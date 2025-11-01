@@ -426,8 +426,8 @@ chaincode/
 
 ```javascript
 {
-    PID: string,           // Unique identifier
-    URI: string,           // Resource location
+    pid: string,           // Unique identifier
+    uri: string,           // Resource location
     hash: string,          // Content hash
     timestamp: string,     // Creation time
     owners: string[],      // List of owner identifiers
