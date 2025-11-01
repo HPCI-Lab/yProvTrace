@@ -106,8 +106,8 @@ This project consists of **two main components**:
 
 | Module             | Description                                                              | Folder       |
 | ------------------ | ------------------------------------------------------------------------ | ------------ |
-| [🌐 **Network**](#-network-module)    | Complete Hyperledger Fabric network with dynamic organization management | `network/`   |
-| [🧱 **Chaincode**](#-chaincode-module)   | Smart contract defining resource lifecycle operations                    | `chaincode/` |
+| 🌐 [**Network**](#-network-module)    | Complete Hyperledger Fabric network with dynamic organization management | `network/`   |
+| 🧱 [**Chaincode**](#-chaincode-module)   | Smart contract defining resource lifecycle operations                    | `chaincode/` |
 
 ---
 
