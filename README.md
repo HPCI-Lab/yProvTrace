@@ -41,7 +41,7 @@ Within this ecosystem, **yProvTrace** introduces a **blockchain-based layer** th
     * [Security Considerations](#-security-considerations)
 * [Chaincode Module](#-chaincode-module)
     * [Folder Structure](#-folder-structure-1)
-    * [Resource Events Contract](#-resource-events-contract)
+    * [Chaincode Functions](#-chaincode-functions)
     * [Resource Schema](#-resource-schema)
 * [Additional Resources](#-additional-resources)
 * [License](#-license)
@@ -421,12 +421,12 @@ chaincode/
 └── 📁 cc-test/                     # Chaincode folder
     ├── 📁 lib/                     # Business logic and data model definitions
     │   └── resource-events.js      # Chaincode source code
-    └── index.js                    # Entry point registering the smart contract
+    └── index.js                    # Entry point registering the chaincode
 ```
 
 ---
 
-### 📜 Resource Events Contract
+### 📜 Chaincode Functions
 
 | Function | Type | Description |
 |----------|------|-------------|
@@ -437,7 +437,7 @@ chaincode/
 | `ReadAllResources` | Evaluate | Returns all resources |
 | `ResourceExists` | Evaluate | Checks if a resource exists |
 
-### 🗃️ Resource Schema
+### 📑 Resource Schema
 
 ```javascript
 {
