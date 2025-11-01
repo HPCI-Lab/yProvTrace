@@ -14,7 +14,7 @@
 
 ---
 
-## 🔗 yProvTrace
+## Introduction
 
 **yProv** is a collaborative initiative between the [University of Trento](https://www.unitn.it) and [CMCC](https://www.cmcc.it), aimed at developing a comprehensive system for managing and exploring provenance information.
 
@@ -24,33 +24,33 @@ Within this ecosystem, **yProvTrace** introduces a **blockchain-based layer** th
 
 ## 📋 Table of Contents
 
-* [🚀 Getting Started](#-getting-started)
-    * [🛠️ Prerequisites](#-prerequisites)
-    * [📥 Installation](#-installation)
-    * [⚡ Quick Start](#-quick-start)
-* [🧩 Project Overview](#-project-overview)
-* [🌐 Network Module](#-network-module)
-    * [📁 Folder Structure](#-folder-structure)
-    * [⚙️ Configuration](#-configuration)
-    * [🔧 Network Operations](#-network-operations)
-        * [📦 Initial Network Setup](#-initial-network-setup)
-        * [🔑 Chaincode Lifecycle](#-chaincode-lifecycle)
-        * [🔄 Dynamic Organization Management](#-dynamic-organization-management)
-    * [📜 Script Reference](#-script-reference)
-    * [🖧 Basic Setup](#-basic-setup)
-    * [🛡️ Security Considerations](#-security-considerations)
-* [🧱 Chaincode Module](#-chaincode-module)
-    * [📁 Folder Structure](#-folder-structure-1)
-    * [📜 Resource Events Contract](#-resource-events-contract)
-    * [🗂️ Resource Schema](#-resource-schema)
-* [📚 Additional Resources](#-additional-resources)
-* [📄 License](#-license)
+* [Getting Started](#-getting-started)
+    * [Prerequisites](#-prerequisites)
+    * [Installation](#-installation)
+    * [Quick Start](#-quick-start)
+* [Project Overview](#-project-overview)
+* [Network Module](#-network-module)
+    * [Folder Structure](#-folder-structure)
+    * [Configuration](#-configuration)
+    * [Network Operations](#-network-operations)
+        * [Initial Network Setup](#-initial-network-setup)
+        * [Chaincode Lifecycle](#-chaincode-lifecycle)
+        * [Dynamic Organization Management](#-dynamic-organization-management)
+    * [Script Reference](#-script-reference)
+    * [Basic Setup](#-basic-setup)
+    * [Security Considerations](#-security-considerations)
+* [Chaincode Module](#-chaincode-module)
+    * [Folder Structure](#-folder-structure-1)
+    * [Resource Events Contract](#-resource-events-contract)
+    * [Resource Schema](#-resource-schema)
+* [Additional Resources](#-additional-resources)
+* [License](#-license)
 
 ---
 
 ## 🚀 Getting Started
 
-### 🛠️ Prerequisites
+### 🔧 Prerequisites
 
 To run this project, ensure that all the following dependencies are installed and available: 
 
@@ -128,7 +128,7 @@ network/
 
 ---
 
-### ⚙️ Configuration
+### 🧰 Configuration
 
 The (`network.config`) configuration file contains all the necessary variables for the network definition, including the Hyperledger Fabric settings and the default identity to use.
 
@@ -157,7 +157,7 @@ CC_SRC_LANG="javascript"
 
 ---
 
-### 🔧 Network Operations
+### 🔗 Network Operations
 
 > [!IMPORTANT]  
 > All scripts related to network operations must be executed from the `network/scripts/` directory. Furthermore, please refer to the [Script Reference](#-script-reference) section for detailed information about each script and its parameters.
@@ -402,7 +402,7 @@ In this example, the chaincode `cc-test` has been installed on every peer.
 ![](./documentation/assets/architecture.png)
 ---
 
-### 🛡️ Security Considerations
+### 🧿 Security Considerations
 
 - 🔐 **Private keys** are stored locally in the `network/organizations` directory (never shared)
 - 📜 **Public certificates** are shared via the `network/identities` folder (ensure trust)
@@ -437,7 +437,7 @@ chaincode/
 | `ReadAllResources` | Evaluate | Returns all resources |
 | `ResourceExists` | Evaluate | Checks if a resource exists |
 
-### 🗂️ Resource Schema
+### 🗃️ Resource Schema
 
 ```javascript
 {
