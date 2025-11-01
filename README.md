@@ -39,10 +39,12 @@ Within this ecosystem, **yProvTrace** introduces a **blockchain-based layer** th
     * [Script Reference](#-script-reference)
     * [Basic Setup](#-basic-setup)
     * [Security Considerations](#-security-considerations)
+    * [Troubleshooting](#-troubleshooting)
 * [Chaincode Module](#-chaincode-module)
     * [Folder Structure](#-folder-structure-1)
     * [Chaincode Functions](#-chaincode-functions)
     * [Resource Schema](#-resource-schema)
+* [Acknowledgments](#-acknowledgments)
 * [Additional Resources](#-additional-resources)
 * [License](#-license)
 
@@ -94,9 +96,6 @@ To quickly set up and run the Hyperledger Fabric network, follow these steps:
 
 > [!TIP]  
 > To better understand the default setup, refer to the [Basic Setup](#-basic-setup) section.
-   
-> [!IMPORTANT]  
-> This will create a ready-to-use local network with all the required components. To learn how to distribute the nodes and how to manage them, please refer to the instructions provided below.
 
 ---
 
@@ -409,6 +408,47 @@ In this example, the chaincode `cc-test` has been installed on every peer.
 - 🔏 **TLS enabled** for all communications
 - ✍️ **Digital signatures** are used for identity verification. For each operation, a challenge is created to test if there is a match between the private credentials and the shared public certificate (useful in local development setups)
 - 🎫 **MSP-based** access control
+
+---
+
+### 💡 Troubleshooting
+
+> #### 1. Docker containers fail to start due to volume related issues
+
+In this specific setup, the Docker Compose files assume directories like `/data_hlf1/fabric/...` to exist (as on the university server). 
+
+**Solutions (choose one):**
+
+1. **Modify the Compose files**
+
+    Remove the user binding (1000:988) from each service and change the volume definitions to let Docker manage them:
+
+```yaml
+# In docker-compose-ord1.yaml
+volumes:
+    orderer_ord1_data:
+        driver: local
+
+# Do the same for the other compose files...
+```
+
+2. **Create the required directories locally**
+
+    Manually create the directories and set ownership to match the Compose configuration:
+
+```bash
+sudo mkdir -p /data_hlf1/fabric/orderer_ord1_data
+sudo mkdir -p /data_hlf1/fabric/peer0_org1_data
+# create also the other required directories...
+
+sudo chown -R 1000:988 /data_hlf1/fabric/
+``` 
+
+After applying **either solution**, you can run the network using:
+
+```bash
+./test-3-orgs.sh
+```
 
 ---
 
