@@ -14,6 +14,14 @@
 
 ---
 
+## yProvTrace
+
+**yProv** is a collaborative initiative between the [University of Trento](https://www.unitn.it) and [CMCC](https://www.cmcc.it), aimed at developing a comprehensive system for managing and exploring provenance information.
+
+Within this ecosystem, **yProvTrace** introduces a **blockchain-based layer** that strengthens the **trustworthiness and auditability** of provenance information. Built on **Hyperledger Fabric**, it enables the secure and immutable recording of provenance data, promoting **transparency, accountability and integrity** in collaborative research environments.
+
+---
+
 ## 📋 Table of Contents
 
 * [🚀 Getting Started](#-getting-started)
