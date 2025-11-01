@@ -186,7 +186,7 @@ The leader organization is responsible for **generating** and **distributing** t
 ./network-init.sh
 ```
 
-> [!DANGER]  
+> [!CAUTION]  
 > In production environments, `network/identities` and `network/channel` directories must be shared among all organizations.
 
 #### Containers startup and channel joining
@@ -299,7 +299,7 @@ The **anchor peer** allows peer discovery and cross-organization communication w
 
 Finally, the chaincode must be installed on the new organization’s peer(s), approved and then committed once again on the channel.
 
-> [!DANGER]  
+> [!CAUTION]  
 > After the new organization has joined the channel, all the federation members must approve the chaincode definition again to include the new member.
 
 ```bash
