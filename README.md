@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔗 yProvTrace
+# yProvTrace
 
 ### *A comprehensive permissioned blockchain network implementation with dynamic organization management and chaincode deployment.*
 
@@ -14,7 +14,7 @@
 
 ---
 
-## yProvTrace
+## 🔗 yProvTrace
 
 **yProv** is a collaborative initiative between the [University of Trento](https://www.unitn.it) and [CMCC](https://www.cmcc.it), aimed at developing a comprehensive system for managing and exploring provenance information.
 
