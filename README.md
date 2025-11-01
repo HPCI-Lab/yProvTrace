@@ -102,25 +102,13 @@ This project consists of **two main components**:
 
 ```
 network/
-├── 📁 bin/                     # Hyperledger Fabric binaries
-├── 📁 channel/                 # Generated channel artifacts
-├── 📁 compose/                 # Docker Compose files
-│   ├── docker-compose-ord1.yaml
-│   ├── docker-compose-org1.yaml
-│   └── ...
-├── 📁 config/                  # Core configuration files
-│   ├── core.yaml               # Peer configuration
-│   └── orderer.yaml            # Orderer configuration
-├── 📁 configtx/                # Channel configuration
-│   ├── configtx.yaml            # Main channel config
-│   └── 📁 org4/                # Dynamic org configs
-├── 📁 crypto/                  # Crypto config templates
-├── 📁 identities/              # Public certificates (shared)
-├── 📁 organizations/            # Private keys (local only)
-├── 📁 package/                  # Deployable chaincode units
-├── 📁 scripts/                  # Automation scripts
-├── 📁 templates/                # Performance benchmarking
-└── network.config               # Network configuration file
+├── 📁 compose/                     # Docker Compose files
+├── 📁 config/                      # Fabric configuration files
+├── 📁 configtx/                    # Channel configuration files                   
+├── 📁 crypto/                      # Crypto definition files
+├── 📁 scripts/                     # Automation scripts
+├── 📁 templates/                   # CCPs for third-parties
+└──  network.config                 # Network configuration file
 ```
 
 ---
@@ -418,8 +406,7 @@ chaincode/
 └── 📁 cc-test/                     # Chaincode folder
     ├── 📁 lib/                     # Business logic and data model definitions
     │   └── resource-events.js      # Chaincode source code
-    ├── index.js                    # Entry point registering the smart contract
-    └── package.json                # Chaincode dependencies and metadata
+    └── index.js                    # Entry point registering the smart contract
 ```
 
 ---
@@ -471,6 +458,7 @@ A big shoutout to the projects below for their awesome work and open-source cont
 
 ## 📚 Additional Resources
 
+- 💻 [yProvTraceInspector](https://github.com/HPCI-Lab/yProvTraceInspector)
 - 📖 [Hyperledger Fabric Documentation](https://hyperledger-fabric.readthedocs.io/)
 - 🔧 [Fabric Gateway SDK](https://hyperledger.github.io/fabric-gateway/)
 
@@ -489,9 +477,7 @@ A big shoutout to the projects below for their awesome work and open-source cont
 <!-- LOGOs -->
 [fabric-logo]: https://img.shields.io/badge/Hyperledger%20Fabric-2.5.13-orange?style=for-the-badge
 [shell-logo]: https://img.shields.io/badge/Shell-Bash-4EAA25?style=for-the-badge&logo=gnu-bash
-[nodejs-logo]: https://img.shields.io/badge/Node.js-18+-green?style=for-the-badge&logo=node.js
 [docker-logo]: https://img.shields.io/badge/Docker-Latest-2496ED?style=for-the-badge&logo=docker
-[typescript-logo]: https://img.shields.io/badge/TypeScript-5.4-3178C6?style=for-the-badge&logo=typescript
 [javascript-logo]: https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black
 [license-logo]: https://img.shields.io/badge/License-GPL%20v3-yellow?style=for-the-badge
 
