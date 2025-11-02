@@ -515,7 +515,6 @@ A big shoutout to the projects below for their awesome work and open-source cont
 
 - 💻 [yProvTraceInspector](https://github.com/HPCI-Lab/yProvTraceInspector)
 - 📖 [Hyperledger Fabric Documentation](https://hyperledger-fabric.readthedocs.io/)
-- 🔧 [Fabric Gateway SDK](https://hyperledger.github.io/fabric-gateway/)
 
 ---
 
