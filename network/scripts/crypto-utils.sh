@@ -2,6 +2,10 @@
 
 source common.sh
 
+# ============================================================================
+# Cryptographic Material Utility Functions
+# ============================================================================
+
 generate_crypto() {
 
     local CRYPTO_CONFIG_FILE=$1

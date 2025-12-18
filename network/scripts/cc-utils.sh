@@ -1,6 +1,10 @@
 #!/bin/bash
 
-. ids-utils.sh
+source ids-utils.sh
+
+# ============================================================================
+# Chaincode Utility Functions
+# ============================================================================
 
 calculate_package_id() {
     set_peer_env

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. common.sh
+source common.sh
 
 copy_msp_folder() {
 

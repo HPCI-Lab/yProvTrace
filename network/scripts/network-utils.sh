@@ -5,6 +5,10 @@ source common.sh
 CURRENT=${NETWORK_CHN_PATH}/config.json
 MODIFIED=${NETWORK_CHN_PATH}/modified_config.json
 
+# ============================================================================
+# Network/Channel Utility Functions
+# ============================================================================
+
 generate_genesis() {
 
     local genesis_file=$(get_genesis_block)

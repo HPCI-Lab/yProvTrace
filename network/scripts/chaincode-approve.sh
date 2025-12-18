@@ -3,7 +3,6 @@
 source ids-utils.sh
 source cc-utils.sh
 
-
 # Verify the identity of the caller
 verify_identity 
 

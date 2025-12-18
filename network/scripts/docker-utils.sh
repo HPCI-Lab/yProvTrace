@@ -2,6 +2,10 @@
 
 source common.sh
 
+# ============================================================================
+# Docker Utility Functions
+# ============================================================================
+
 up() {
     local COMPOSE_FILE=$1
     docker compose -f ${COMPOSE_FILE} -p ${DOCKER_PROJECT_NAME} up -d
