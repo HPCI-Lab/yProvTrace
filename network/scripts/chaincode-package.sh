@@ -1,40 +1,39 @@
 #!/bin/bash
 
-. set-env.sh
+source common.sh
 
 #User has not provided a name
-if [ -z "$CC_NAME" ]; then
-    echo "Error: No chaincode name was provided."
+if [ -z "$CHAINCODE_NAME" ]; then
+    log_error "No chaincode name was provided"
     exit 1
 
 # User has not provided a path
-elif [ -z "$CC_SRC_PATH" ]; then
-    echo "Error: No chaincode path was provided."
+elif [ -z "$CHAINCODE_SRC_PATH" ]; then
+    log_error "No chaincode path was provided"
     exit 1
 
 # User has not provided a language
-elif [ -z "$CC_SRC_LANG" ]; then
-    echo "Error: No chaincode language was provided."
+elif [ -z "$CHAINCODE_LANGUAGE" ]; then
+    log_error "No chaincode language was provided"
     exit 1
 
 # User has not provided a version
-elif [ -z "$CC_VERSION" ]; then
-    echo "Error: No chaincode version was provided."
+elif [ -z "$CHAINCODE_VERSION" ]; then
+    log_error "No chaincode version was provided"
     exit 1
 
 # Make sure that the src path to the chaincode exists
-elif [ ! -d "$CC_SRC_PATH" ]; then
-    echo "Error: Path to chaincode does not exist. Please provide a different path."
+elif [ ! -d "$CHAINCODE_SRC_PATH" ]; then
+    log_error "Path to chaincode does not exist. Please provide a different path."
     exit 1
 fi
 
-CC_SRC_LANG=$(echo "$CC_SRC_LANG" | tr [:upper:] [:lower:])
-if [ "$CC_SRC_LANG" = "go" ]; then
-    CC_RUNTIME_LANG="golang"
-elif [ "$CC_SRC_LANG" = "javascript" ] || [ "$CC_SRC_LANG" = "typescript" ]; then
-    CC_RUNTIME_LANG="node"
+CHAINCODE_LANGUAGE=$(echo "$CHAINCODE_LANGUAGE" | tr [:upper:] [:lower:])
+
+if [[ "$CHAINCODE_LANGUAGE" == "javascript" ]]; then
+    CHAINCODE_RUNTIME_LANGUAGE="node"
 else
-    echo "Error: The chaincode language ${CC_SRC_LANG} is not supported by this script. Supported chaincode languages are: go, javascript, typescript."
+    log_error "${CHAINCODE_LANGUAGE} is not supported by this script. Supported chaincode languages are: javascript."
     exit 1
 fi
 
@@ -42,10 +41,12 @@ if [ ! -d "$NETWORK_PKG_PATH" ]; then
     mkdir -p ${NETWORK_PKG_PATH}
 fi
 
-echo "Chaincode name: ${CC_NAME}"
-echo "Chaincode path: ${CC_SRC_PATH}"
-echo "Chaincode language: ${CC_SRC_LANG} (${CC_RUNTIME_LANG})"
-echo "Chaincode version: ${CC_VERSION}"
+log_info "Chaincode Name: ${CHAINCODE_NAME}"
+log_info "Chaincode Version: ${CHAINCODE_VERSION}"
+log_info "Chaincode Source Path: ${CHAINCODE_SRC_PATH}"
+log_info "Chaincode Language: ${CHAINCODE_LANGUAGE} (Runtime: ${CHAINCODE_RUNTIME_LANGUAGE})"
 
-peer lifecycle chaincode package ${CC_PKG_PATH} --path ${CC_SRC_PATH} --lang ${CC_RUNTIME_LANG} --label ${CC_NAME}_${CC_VERSION}
-echo "Chaincode packaged successfully at ${CC_PKG_PATH}"
+CHAINCODE_PKG_PATH=$(get_chaincode_package)
+peer lifecycle chaincode package ${CHAINCODE_PKG_PATH} --path ${CHAINCODE_SRC_PATH} --lang ${CHAINCODE_RUNTIME_LANGUAGE} --label ${CHAINCODE_NAME}_${CHAINCODE_VERSION}
+
+log_success "Chaincode packaged successfully at ${CHAINCODE_PKG_PATH}"

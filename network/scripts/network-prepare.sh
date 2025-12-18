@@ -1,28 +1,23 @@
 #!/bin/bash
 
-. crypto-utils.sh
-. ids-utils.sh
-
 CRYPTO_CONFIG_FILE=$1
-DOCKER_COMPOSE_FILE=$2
 
 # Check if the crypto config file is provided
-if [ -z "$CRYPTO_CONFIG_FILE" ] || [ -z "$DOCKER_COMPOSE_FILE" ]; then
-    echo "Usage: $0 <crypto-config-file> <docker-compose-file>"
+if [ -z "$CRYPTO_CONFIG_FILE" ]; then
+    log_error "Crypto config file not specified."
     exit 1
 fi
 
 # Check if the crypto config file exists
 if [ ! -f "$CRYPTO_CONFIG_FILE" ]; then
-    echo "Crypto config file not found: $CRYPTO_CONFIG_FILE"
+    log_error "Crypto config file '$CRYPTO_CONFIG_FILE' does not exist."
     exit 1
 fi
 
-# Check if the docker compose file exists
-if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
-    echo "Docker compose file not found: $DOCKER_COMPOSE_FILE"
-    exit 1
-fi
+export ORG_CONFIG_FILE=$1
+
+source crypto-utils.sh
+source ids-utils.sh
 
 # Create the necessary directories
 if [ ! -d "${NETWORK_ORG_PATH}" ]; then
@@ -37,12 +32,12 @@ fi
 generate_crypto ${CRYPTO_CONFIG_FILE}
 
 # Copy the CA and TLS certificates
-ORG_DIR=$(copy_msp_folder ${CRYPTO_CONFIG_FILE})
+copy_msp_folder
 
 # Generate the endpoints definition
-generate_endpoints ${ORG_DIR} ${DOCKER_COMPOSE_FILE}
+generate_endpoints
 
 # Generate the common connection profile
 generate_ccp ${CRYPTO_CONFIG_FILE}
 
-echo "Network identity generated successfully at ${ORG_DIR}"
+log_success "Network preparation completed for organization: ${ORG_DOMAIN}"

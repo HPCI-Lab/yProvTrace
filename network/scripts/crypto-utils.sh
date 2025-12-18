@@ -1,50 +1,66 @@
 #!/bin/bash
 
-. set-env.sh
+source common.sh
 
 generate_crypto() {
 
     local CRYPTO_CONFIG_FILE=$1
 
     cryptogen generate --config=${CRYPTO_CONFIG_FILE} --output=${NETWORK_ORG_PATH} > /dev/null 2>&1
-    echo "Cryptographic material generated successfully in ${NETWORK_ORG_PATH}"
+    
+    if [ $? -ne 0 ]; then
+        log_error "Error while generating crypto material using config: ${CRYPTO_CONFIG_FILE}"
+        exit 1
+    fi
+
+    log_success "Crypto material generated for organization: ${ORG_DOMAIN}"
 }
 
 generate_ccp() {
 
-    local crypto_config_file=$1
+    # * Assumes that organization is loaded
 
-    local org=$(yq -r '.PeerOrgs' ${crypto_config_file})
+    local type=${ORG_TYPE}
 
-    if [ -z "$org" ] || [ "$org" == "null" ]; then
-        echo "Skipping..."
+    if [ "$type" == "orderer" ]; then
+        log_info "Skipping CCP generation for orderer organization."
         return
     fi
 
-    local name=$(echo "$org" | jq -r 'to_entries[0] | .value | .Name')
-    local domain=$(echo "$org" | jq -r 'to_entries[0] | .value | .Domain')
-    local org_cert_path="${NETWORK_ORG_PATH}/peerOrganizations/${domain}/tlsca/tlsca.${domain}-cert.pem"
+    local hostname="${ORG_HOSTNAME}.${ORG_DOMAIN}"
+    local listen_address="${ORG_ENDPOINT}:${ORG_LISTEN_PORT}"
+    local ids_dir=$(get_identity_dir)
+    local org_cert_path="${ids_dir}/msp/tlscacerts/tlsca.${ORG_DOMAIN}-cert.pem" # Before was private pointing to peer0
+    local org_ccp_file="${ids_dir}/connection-${ORG_NAME,,}.json"
 
-    set_peer ${domain} ${DEFAULT_PEER_ID}
-
-    local org_ccp_file="${NETWORK_ORG_PATH}/peerOrganizations/${domain}/connection-${name,,}.json"
-
-    sed -e "s|\${ORG_NAME}|$name|" \
-        -e "s|\${MSPID}|$CORE_PEER_LOCALMSPID|" \
-        -e "s|\${PEER_HOSTNAME}|$PEER_HOSTNAME|" \
-        -e "s|\${ENDPOINT}|$CORE_PEER_ADDRESS|" \
+    sed -e "s|\${ORG_NAME}|$ORG_NAME|" \
+        -e "s|\${MSPID}|$ORG_MSP_ID|" \
+        -e "s|\${PEER_HOSTNAME}|$hostname|" \
+        -e "s|\${ENDPOINT}|$listen_address|" \
         -e "s|\${ORG_CERT_PATH}|$org_cert_path|" \
         ${NETWORK_TMP_PATH}/ccp-template.json > $org_ccp_file
 
-    echo "Organization-level Common Connection Profile generated at $org_ccp_file"
+    if [ $? -ne 0 ]; then
+        log_error "Failed to generate ccp for organization: ${ORG_NAME}"
+        exit 1
+    fi
+
+    log_success "CCP generated successfully for: ${ORG_NAME}"
 }
 
 delete_crypto() {
 
-    local ORG_DOMAIN=$1
+    # * Assumes that organization is loaded
 
-    rm -rf "${NETWORK_ORG_PATH}/peerOrganizations/${ORG_DOMAIN,,}"
-    echo "Cryptographic material for organization ${ORG_DOMAIN} deleted successfully."
+    local org_dir=$(get_org_dir)
+    rm -rf "${org_dir}"
+
+    if [ $? -ne 0 ]; then
+        log_error "Failed to delete cryptographic material for organization: ${ORG_DOMAIN}"
+        exit 1
+    fi
+
+    log_success "Cryptographic material for organization ${ORG_DOMAIN} deleted successfully."
 }
 
 

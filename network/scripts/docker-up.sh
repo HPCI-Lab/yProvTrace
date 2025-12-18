@@ -1,18 +1,18 @@
 #!/bin/bash
 
-. docker-utils.sh
+source docker-utils.sh
 
 COMPOSE_FILE=$1
 
 # Check if the compose file is provided
 if [ -z "$COMPOSE_FILE" ]; then
-    echo "Usage: $0 <compose-file>"
+    log_error "Compose file not specified"
     exit 1
 fi
 
 # Check if the compose file exists
 if [ ! -f "$COMPOSE_FILE" ]; then
-    echo "Error: Compose file $COMPOSE_FILE does not exist."
+    log_error "Compose file '$COMPOSE_FILE' does not exist"
     exit 1
 fi
 

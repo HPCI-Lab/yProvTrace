@@ -1,10 +1,12 @@
 #!/bin/bash
 
-. network-utils.sh
+export ORG_CONFIG_FILE="None"
 
-# Force create the necessary directories (for emulation purposes)
-rm -rf ${NETWORK_CHN_PATH}
-mkdir -p ${NETWORK_CHN_PATH}
+source network-utils.sh
+
+if [ ! -d "${NETWORK_CHN_PATH}" ]; then
+    mkdir -p ${NETWORK_CHN_PATH}
+fi
 
 # Generate the genesis block
 # NOTE: Genesis block is created by the admin organization (Org1) and then shared with all other organizations.

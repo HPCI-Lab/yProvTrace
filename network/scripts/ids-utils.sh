@@ -1,134 +1,86 @@
 #!/bin/bash
 
-. set-env.sh
+. common.sh
 
 copy_msp_folder() {
 
-    # Copy the MSP and TLS certificates
-    # Also initialize the endpoints.json file for the identity
+    # * Assumes that organization is loaded 
 
-    local crypto_config_file=$1
+    local domain=${ORG_DOMAIN}
+    local type=${ORG_TYPE}
 
-    local org=$(yq -r '.PeerOrgs' ${crypto_config_file})
-    local ord=$(yq -r '.OrdererOrgs' ${crypto_config_file})
+    local org_dir=$(get_org_dir)
+    local ids_dir=$(get_identity_dir)
 
-    if [[ "$org" == "null" ]]; then
-        type="ordererOrganizations"
-        data=$(echo "$ord" | jq -r 'to_entries[0] | .value')
-    else
-        type="peerOrganizations"
-        data=$(echo "$org" | jq -r 'to_entries[0] | .value')
+    if [ ! -d "${ids_dir}" ]; then
+        mkdir -p "${ids_dir}"
+        log_debug "Created identities directory: ${ids_dir}"
     fi
-
-    local name=$(echo "$data" | jq -r '.Name')
-    local domain=$(echo "$data" | jq -r ".Domain")
-    local hostname=$(echo "$data" | jq -r '.Specs[0].Hostname')
-
-    ORG_DIR="${NETWORK_IDS_PATH}/${type}/${domain,,}"
-    mkdir -p "${ORG_DIR}"
 
     # Copy the MSP folder containting TLS and CA certificates
-    cp -rf "${NETWORK_ORG_PATH}/${type}/${domain}/msp" "${ORG_DIR}/msp"
+    cp -rf "${org_dir}/msp" "${ids_dir}/msp"
 
     # Copy the admin certificate into MSP folder
-    cp "${NETWORK_ORG_PATH}/${type}/${domain}/users/Admin@${domain}/msp/signcerts/Admin@${domain}-cert.pem" "${ORG_DIR}/msp/admincerts/admin-cert.pem"
+    cp "${org_dir}/users/Admin@${domain}/msp/signcerts/Admin@${domain}-cert.pem" "${ids_dir}/msp/admincerts/admin-cert.pem"
 
-    if [[ "$type" == "ordererOrganizations" ]]; then
+    if [[ "$type" == "orderer" ]]; then
         # Copy the orderer TLS server certificate
-        mkdir -p "${ORG_DIR}/tls"
-        cp "${NETWORK_ORG_PATH}/${type}/${domain}/orderers/${hostname}.${domain}/tls/server.crt" "${ORG_DIR}/tls/server.crt"
+        mkdir -p "${ids_dir}/tls"
+        cp "${org_dir}/orderers/orderer.${domain}/tls/server.crt" "${ids_dir}/tls/server.crt" # Assumes standard naming for orderers
     fi
 
-    echo ${ORG_DIR}
+    log_success "MSP/TLS folders shared for organization: ${ORG_DOMAIN}"
 }
 
 generate_endpoints() {
     
-    local org_dir=$1
-    local docker_compose_file=$2
+    # * Assumes that organization is loaded
 
-    # Extract the endpoints from the docker compose file
-    local services=$(yq -r '.services | to_entries | .[] | @json' ${docker_compose_file})
-    local genesis_orgs=$(yq -r '.Organizations' "${NETWORK_CTX_PATH}/configtx.yaml")
+    local ids_dir=$(get_identity_dir)
 
-    while IFS= read -r service; do
+    if [ ! -d "${ids_dir}" ]; then
+        mkdir -p "${ids_dir}"
+        log_debug "Created identities directory: ${ids_dir}"
+    fi
 
-        local json_file="${org_dir}/endpoints.json"
-        if [ ! -f "${json_file}" ]; then
-            echo "{}" > "${json_file}"
-        fi
+    local json_file="${ids_dir}/endpoints.json"
+    echo "{}" > "${json_file}"
 
-        local service_id=$(($(jq 'keys | length' ${json_file}) + 1))
-        local service_type=$(echo "$service" | jq -r '.value.image | split(":") | .[0] | split("/") | .[-1] | sub("fabric-"; "")') # This returns peer or orderer
-        
-        if [[ "$service_type" == "peer" ]]; then
-            PEER_HOSTNAME=$(echo "$service" | jq -r '.key')
-            PEER_GENERAL_LISTEN_PORT=$(echo "$service" | jq -r '.value.environment[] | select(. | startswith("CORE_PEER_ADDRESS=")) | sub("CORE_PEER_ADDRESS="; "") | split(":") | .[-1]')
-            PEER_LISTEN_PORT="${DEFAULT_ENDPOINT}:${PEER_GENERAL_LISTEN_PORT}"
-            PEER_LOCAL_MSPID=$(echo "$service" | jq -r '.value.environment[] | select(. | startswith("CORE_PEER_LOCALMSPID=")) | sub("CORE_PEER_LOCALMSPID="; "")')
+    jq \
+        --arg id "service" \
+        --arg hostname "$ORG_HOSTNAME" \
+        --arg domain "$ORG_DOMAIN" \
+        --arg listenAddress "${ORG_ENDPOINT}:${ORG_LISTEN_PORT}" \
+        '.[$id] = {hostname: $hostname, domain: $domain, address: $listenAddress}' \
+        "${json_file}" > "${json_file}.tmp" && mv "${json_file}.tmp" "${json_file}"
 
-            # Check if the peer is an anchor peer
-            local is_anchor=false
-            while read -r org; do
-                anchor=$(echo "$org" | jq -r --arg host "$PEER_HOSTNAME" '.AnchorPeers | .[]? | select(.Host == $host)')
-                if [[ -n "$anchor" ]]; then
-                    is_anchor=true
-                    break
-                fi
-            done < <(echo "$genesis_orgs" | jq -c '.[]')
+    if [[ "$ORG_TYPE" == "orderer" ]]; then
+        jq \
+            --arg id "service" \
+            --arg adminAddress "${ORG_ENDPOINT}:${ORG_ADMIN_PORT}" \
+            '.[$id].adminAddress = $adminAddress' \
+            "${json_file}" > "${json_file}.tmp" && mv "${json_file}.tmp" "${json_file}"
+    fi
 
-            jq \
-                --arg peerId "$service_id" \
-                --arg peerHost "$PEER_HOSTNAME" \
-                --arg listenPort "$PEER_LISTEN_PORT" \
-                --arg localMspId "$PEER_LOCAL_MSPID" \
-                --arg is_anchor "$is_anchor" \
-                '.[$peerId] = {hostname: $peerHost, address: $listenPort, localMspId: $localMspId, is_anchor: $is_anchor}' \
-                "${json_file}" > "${json_file}.tmp" && mv "${json_file}.tmp" "${json_file}"
-        
-        elif [[ "$service_type" == "orderer" ]]; then
-            ORDERER_HOSTNAME=$(echo "$service" | jq -r '.key')
-            ORDERER_DOMAIN=$(echo "$ORDERER_HOSTNAME" | cut -d'.' -f2-)
-            ORDERER_GENERAL_LISTEN_PORT=$(echo "$service" | jq -r '.value.environment[] | select(. | startswith("ORDERER_GENERAL_LISTENPORT=")) | sub("ORDERER_GENERAL_LISTENPORT="; "")')
-            ORDERER_LISTEN_ADDRESS="${DEFAULT_ENDPOINT}:${ORDERER_GENERAL_LISTEN_PORT}"
-            ORDERER_ADMIN_LISTEN_PORT=$(echo "$service" | jq -r '.value.environment[] | select(. | startswith("ORDERER_ADMIN_LISTENADDRESS=")) | sub("ORDERER_ADMIN_LISTENADDRESS="; "") | split(":") | .[-1]')
-            ORDERER_ADMIN_LISTEN_ADDRESS="${DEFAULT_ENDPOINT}:${ORDERER_ADMIN_LISTEN_PORT}"
-
-            jq \
-                --arg ordId "$service_id" \
-                --arg ordHost "$ORDERER_HOSTNAME" \
-                --arg ordDomain "$ORDERER_DOMAIN" \
-                --arg listenAddress "$ORDERER_LISTEN_ADDRESS" \
-                --arg adminListenAddress "$ORDERER_ADMIN_LISTEN_ADDRESS" \
-                '.[$ordId] = {hostname: $ordHost, domain: $ordDomain, address: $listenAddress, adminAddress: $adminListenAddress}' \
-                "${json_file}" > "${json_file}.tmp" && mv "${json_file}.tmp" "${json_file}"
-        fi
-    done <<< "$services"
+    log_success "Endpoints generated for: ${ORG_HOSTNAME}.${ORG_DOMAIN}"
 }
 
 verify_identity() {
 
-    # Verify the identity of the caller by checking its private keys against the public certificates
+    # * Assumes that organization is loaded
 
-    local org_domain=$1
-    
-    local admin_private_key="${NETWORK_ORG_PATH}/peerOrganizations/${org_domain}/users/Admin@${org_domain}/msp/keystore/priv_sk"
-    if [ ! -f "${admin_private_key}" ]; then
-        admin_private_key="${NETWORK_ORG_PATH}/ordererOrganizations/${org_domain}/users/Admin@${org_domain}/msp/keystore/priv_sk"
-    fi
-    
-    local admin_public_cert="${NETWORK_IDS_PATH}/peerOrganizations/${org_domain}/msp/admincerts/admin-cert.pem"
-    if [ ! -f "${admin_public_cert}" ]; then
-        admin_public_cert="${NETWORK_IDS_PATH}/ordererOrganizations/${org_domain}/msp/admincerts/admin-cert.pem"
-    fi
+    local org_dir=$(get_org_dir)
+    local ids_dir=$(get_identity_dir)
+    local admin_private_key="${org_dir}/users/Admin@${ORG_DOMAIN}/msp/keystore/priv_sk"
+    local admin_public_cert="${ids_dir}/msp/admincerts/admin-cert.pem"
     
     if [ ! -f "${admin_public_cert}" ]; then
-        echo "Error: Admin certificate for ${org_domain} not found."
+        log_error "Admin public certificate for ${ORG_DOMAIN} not found."
         exit 1
     fi
 
     if [ ! -f "${admin_private_key}" ]; then
-        echo "Error: Admin private key for ${org_domain} not found."
+        log_error "Admin private key for ${ORG_DOMAIN} not found."
         exit 1
     fi
 
@@ -139,12 +91,15 @@ verify_identity() {
     openssl x509 -in "${admin_public_cert}" -pubkey -noout | openssl dgst -sha256 -verify /dev/stdin -signature <(echo "$SIGNATURE" | base64 -d) <(echo -n "$CHALLENGE")
 
     if [[ $? -ne 0 ]]; then
-        echo "Error: unable to verify identity. Certificates mismatch."
+        log_error "Identity verification failed for ${ORG_DOMAIN}."
         exit 1
     fi
 }
 
 get_tls_identities() {
+
+    # * Assumes that network paths are set
+
     for organization in $(ls -d ${NETWORK_IDS_PATH}/peerOrganizations/*/); do
         local domain=$(basename "${organization}")
         local peer_address=$(jq -r '.[].address' "${organization}/endpoints.json" | head -n 1)
@@ -155,6 +110,16 @@ get_tls_identities() {
 }
 
 remove_identity() {
-    local org_domain=$1
-    rm -rf "${NETWORK_IDS_PATH}/peerOrganizations/${org_domain,,}"
+
+    # * Assumes that organization is loaded
+
+    local org_dir=$(get_org_dir)
+    rm -rf "${org_dir}"
+
+    if [ $? -ne 0 ]; then
+        log_error "Failed to delete cryptographic material for organization: ${ORG_DOMAIN}"
+        exit 1
+    fi
+
+    log_success "Cryptographic material deleted for organization: ${ORG_DOMAIN}"
 }

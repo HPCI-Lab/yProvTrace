@@ -1,0 +1,16 @@
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.testbed.local
+    MSPId: Org1MSP
+    EnableNodeOUs: true
+    Template:
+      Count: 1 # Default, don't change
+      DefaultEndpoint: localhost
+      SANS:
+        - localhost
+      Ports:
+        ListenPort: 7054
+        OperationsPort: 9054
+    DefaultOrdererDomain: ord1.testbed.local
+    Users:
+      Count: 3 # Number of users (excluding admin) per organization

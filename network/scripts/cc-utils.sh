@@ -3,82 +3,110 @@
 . ids-utils.sh
 
 calculate_package_id() {
+    set_peer_env
+    local CC_PKG_PATH=$(get_chaincode_package)
     PACKAGE_ID=$(peer lifecycle chaincode calculatepackageid ${CC_PKG_PATH})
-    echo ${PACKAGE_ID}
+    echo "${PACKAGE_ID}"
 }
 
 resolveSequence() {
     COMMITTED_CC_SEQUENCE=$(peer lifecycle chaincode querycommitted --channelID $NETWORK_CHN_NAME --name ${CC_NAME} 2>/dev/null | sed -n "/Version:/{s/.*Sequence: //; s/, Endorsement Plugin:.*$//; p;}")
     
     if [ -z "$COMMITTED_CC_SEQUENCE" ]; then
-        export CC_SEQUENCE=1
+        export CHAINCODE_SEQUENCE=1
     else
         APPROVED_CC_SEQUENCE=$(peer lifecycle chaincode queryapproved --channelID $NETWORK_CHN_NAME --name ${CC_NAME} 2>/dev/null | sed -n "/sequence:/{s/^sequence: //; s/, version:.*$//; p;}")
 
         if [ -z "$APPROVED_CC_SEQUENCE" ] || [ "$COMMITTED_CC_SEQUENCE" == "$APPROVED_CC_SEQUENCE" ]; then
-            export CC_SEQUENCE=$((COMMITTED_CC_SEQUENCE+1))
+            export CHAINCODE_SEQUENCE=$((COMMITTED_CC_SEQUENCE+1))
         else
-            export CC_SEQUENCE=$APPROVED_CC_SEQUENCE
+            export CHAINCODE_SEQUENCE=$APPROVED_CC_SEQUENCE
         fi
     fi
 
-    echo "Resolved chaincode sequence: ${CC_SEQUENCE}"
+    log_info "Resolved chaincode sequence number: ${CHAINCODE_SEQUENCE}"
 }
 
 check_commit_readiness() {
+    set_peer_env
     peer lifecycle chaincode checkcommitreadiness \
-        --channelID ${NETWORK_CHN_NAME} \
-        --name ${CC_NAME} \
-        --version ${CC_VERSION} \
-        --sequence ${CC_SEQUENCE} \
+        --channelID ${CHANNEL_NAME} \
+        --name ${CHAINCODE_NAME} \
+        --version ${CHAINCODE_VERSION} \
+        --sequence ${CHAINCODE_SEQUENCE} \
         --output json
+    
+    if [ $? -ne 0 ]; then
+        log_error "Chaincode '${CHAINCODE_NAME}' commit readiness check failed for organization ${ORG_DOMAIN}"
+        exit 1
+    fi
+
+    log_success "Chaincode '${CHAINCODE_NAME}' commit readiness check succeeded for organization ${ORG_DOMAIN}"
 }
 
 install_chaincode() {
 
-    local org_domain=$1
-    local endpoints_file="${NETWORK_IDS_PATH}/peerOrganizations/${org_domain}/endpoints.json"
-    local peers_count=$(jq -r "keys | length" ${endpoints_file})
+    set_peer_env
 
-    for ((i=1; i<=peers_count; i++)); do
-        set_peer ${org_domain} ${i}
-        peer lifecycle chaincode install ${CC_PKG_PATH}
-        if [ $? -ne 0 ]; then
-            echo "Failed to install chaincode on peer $i"
-            exit 1
-        fi
-    done
+    local CC_PKG_PATH=$(get_chaincode_package)
+    peer lifecycle chaincode install ${CC_PKG_PATH}
+    
+    if [ $? -ne 0 ]; then
+        log_error "Chaincode '${CHAINCODE_NAME}' installation failed on peer ${CORE_PEER_ADDRESS}"
+        exit 1
+    fi
+
+    log_success "Chaincode '${CHAINCODE_NAME}' installed on peer ${CORE_PEER_ADDRESS}"
 }
 
 approve_chaincode() {
-    local PACKAGE_ID=$1
+    set_peer_env
+    local PACKAGE_ID=$(calculate_package_id)
+
+    get_default_orderer
+
     peer lifecycle chaincode approveformyorg \
         -o ${ORDERER_ADDRESS} \
         --ordererTLSHostnameOverride ${ORDERER_HOSTNAME} \
         --tls \
         --cafile ${ORDERER_TLS_CA} \
-        --channelID ${NETWORK_CHN_NAME} \
+        --channelID ${CHANNEL_NAME} \
         --package-id ${PACKAGE_ID} \
-        --name ${CC_NAME} \
-        --version ${CC_VERSION} \
-        --sequence ${CC_SEQUENCE}
-    echo "Chaincode approved for organization ${CORE_PEER_LOCALMSPID}."
+        --name ${CHAINCODE_NAME} \
+        --version ${CHAINCODE_VERSION} \
+        --sequence ${CHAINCODE_SEQUENCE}
+    
+    if [ $? -ne 0 ]; then
+        log_error "Chaincode '${CHAINCODE_NAME}' approval failed for organization ${ORG_DOMAIN}"
+        exit 1
+    fi  
+
+    log_success "Chaincode '${CHAINCODE_NAME}' approved for organization ${ORG_DOMAIN}"
 }
 
 commit_chaincode() {
     
     local tls_identities=$(get_tls_identities)
 
+    get_default_orderer
+
     peer lifecycle chaincode commit \
         -o ${ORDERER_ADDRESS} \
         --ordererTLSHostnameOverride ${ORDERER_HOSTNAME} \
         --tls \
         --cafile ${ORDERER_TLS_CA} \
-        --channelID ${NETWORK_CHN_NAME} \
-        --name ${CC_NAME} \
-        --version ${CC_VERSION} \
-        --sequence ${CC_SEQUENCE} \
+        --channelID ${CHANNEL_NAME} \
+        --name ${CHAINCODE_NAME} \
+        --version ${CHAINCODE_VERSION} \
+        --sequence ${CHAINCODE_SEQUENCE} \
         ${tls_identities}
+    
+    if [ $? -ne 0 ]; then
+        log_error "Chaincode '${CHAINCODE_NAME}' commit failed on channel ${CHANNEL_NAME}"
+        exit 1
+    fi
+
+    log_success "Chaincode '${CHAINCODE_NAME}' committed on channel ${CHANNEL_NAME}"
 }
 
 invoke_chaincode() {

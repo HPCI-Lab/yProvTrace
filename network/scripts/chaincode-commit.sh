@@ -1,21 +1,9 @@
 #!/bin/bash
 
-. cc-utils.sh
-
-ORG_DOMAIN=$1
-
-# Check if the organization domain is provided
-if [ -z "$ORG_DOMAIN" ]; then
-    echo "Usage: $0 <org_domain>"
-    exit 1
-fi
+source cc-utils.sh
 
 # Verify the identity of the caller
-verify_identity ${ORG_DOMAIN}
-
-# Set the default orderer and peer
-set_orderer ${DEFAULT_ORD}
-set_peer ${ORG_DOMAIN} ${DEFAULT_PEER_ID}
+verify_identity
 
 # Resolve the sequence number for the chaincode
 resolveSequence

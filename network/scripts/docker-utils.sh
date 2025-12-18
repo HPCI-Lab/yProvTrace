@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. set-env.sh
+source common.sh
 
 up() {
     local COMPOSE_FILE=$1

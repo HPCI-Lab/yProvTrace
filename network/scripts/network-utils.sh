@@ -1,67 +1,60 @@
 #!/bin/bash
 
-. set-env.sh
+source common.sh
 
 CURRENT=${NETWORK_CHN_PATH}/config.json
 MODIFIED=${NETWORK_CHN_PATH}/modified_config.json
 
 generate_genesis() {
+
+    local genesis_file=$(get_genesis_block)
+
     configtxgen \
         -configPath ${NETWORK_CTX_PATH} \
         -profile ChannelUsingRaft \
-        -outputBlock ${GENESIS_BLOCK} \
-        -channelID ${NETWORK_CHN_NAME}
+        -outputBlock ${genesis_file} \
+        -channelID ${CHANNEL_NAME}
 
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to create genesis block. Check ${NETWORK_LOG_PATH}/join/genesis.log for details."
+        log_error "Failed to create genesis block"
         exit 1
-    else
-        echo "Genesis block created successfully at ${GENESIS_BLOCK}"
     fi
+
+    log_success "Genesis block created successfully at ${genesis_file}"
 }
 
 join_orderer() {
-    local ord_hostname=$1
-    set_orderer ${ord_hostname}
+    set_orderer_env
+    local genesis_file=$(get_genesis_block)
+
     osnadmin channel join \
-        --channelID ${NETWORK_CHN_NAME} \
-        --config-block ${GENESIS_BLOCK} \
+        --channelID ${CHANNEL_NAME} \
+        --config-block ${genesis_file} \
         -o ${ORDERER_ADMIN_ADDRESS} \
         --ca-file ${ORDERER_TLS_CA} \
         --client-cert ${ORDERER_TLS_SIGN_CERT} \
         --client-key ${ORDERER_TLS_PRIVATE_KEY}
     
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to join orderer ${ORDERER_HOSTNAME} to channel '${NETWORK_CHN_NAME}'."
+        log_error "Orderer ${ORDERER_HOSTNAME} failed to join channel '${CHANNEL_NAME}'."
         exit 1
-    else
-        echo "Orderer ${ORDERER_HOSTNAME} joined channel '${NETWORK_CHN_NAME}' successfully."
     fi
+    
+    log_success "Orderer ${ORDERER_HOSTNAME} joined channel '${CHANNEL_NAME}' successfully."
 }
 
-join_organization() {
+join_peer() {
+    set_peer_env
+    local genesis_file=$(get_genesis_block)
 
-    local org_domain=$1
-    local endpoints_file="${NETWORK_IDS_PATH}/peerOrganizations/${org_domain}/endpoints.json"
+    peer channel join -b ${genesis_file}
 
-    if [ ! -f "${endpoints_file}" ]; then
-        echo "Error: Endpoints file not found for organization '${org_domain}'."
+    if [ $? -ne 0 ]; then
+        log_error "Peer ${CORE_PEER_ADDRESS} failed to join channel '${NETWORK_CHN_NAME}'."
         exit 1
     fi
-
-    local peers_count=$(jq -r "keys | length" ${endpoints_file})
-
-    for ((i=1; i<=peers_count; i++)); do
-        set_peer ${org_domain} ${i}
-        peer channel join -b ${GENESIS_BLOCK}
-
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to join peer ${CORE_PEER_ADDRESS} to channel '${NETWORK_CHN_NAME}'."
-            exit 1
-        else
-            echo "Peer ${CORE_PEER_ADDRESS} joined channel '${NETWORK_CHN_NAME}' successfully."
-        fi
-    done
+        
+    log_success "Peer ${CORE_PEER_ADDRESS} joined channel '${NETWORK_CHN_NAME}' successfully."
 }
 
 generate_definition() {
