@@ -7,7 +7,6 @@ source ids-utils.sh
 # ============================================================================
 
 calculate_package_id() {
-    set_peer_env
     local CC_PKG_PATH=$(get_chaincode_package)
     PACKAGE_ID=$(peer lifecycle chaincode calculatepackageid ${CC_PKG_PATH})
     echo "${PACKAGE_ID}"
@@ -65,7 +64,9 @@ install_chaincode() {
 
 approve_chaincode() {
     set_peer_env
+
     local PACKAGE_ID=$(calculate_package_id)
+    log_debug "Calculated package ID: ${PACKAGE_ID}"
 
     get_default_orderer
 
@@ -118,11 +119,8 @@ invoke_chaincode() {
     # TODO: add params
     # TODO: single function for all invokations or separate? Maybe contract-utils.sh ?
 
-    local org_domain=$1
-    local peer_id=$2
-
     TIMESTAMP=$(date +%s%3N)
-    PID="pid_test_${org_domain}"
+    PID="pid_test_${ORG_DOMAIN}"
     URI="https://example.com/resource/$PID"
     
     # Generate hash - use shasum on macOS, sha256sum on Linux
@@ -140,12 +138,13 @@ invoke_chaincode() {
     
     TLS_IDENTITIES=$(get_tls_identities)
 
-    set_orderer ${DEFAULT_ORD}
-    set_peer ${org_domain} ${peer_id}
+    get_default_orderer
+    set_peer_env 
+
     peer chaincode invoke \
         -o $ORDERER_ADDRESS \
-        -C $NETWORK_CHN_NAME \
-        -n $CC_NAME \
+        -C $CHANNEL_NAME \
+        -n $CHAINCODE_NAME \
         --tls \
         --cafile $ORDERER_TLS_CA \
         ${TLS_IDENTITIES} \
@@ -153,17 +152,16 @@ invoke_chaincode() {
 }
 
 query_chaincode() {
-    local org_domain=$1
-    local peer_id=$2
 
-    PID="pid_test_${org_domain}"
+    PID="pid_test_${ORG_DOMAIN}"
     JSON_PAYLOAD="{\"Args\":[\"ReadResource\",\"$PID\"]}"
     
-    set_orderer ${DEFAULT_ORD}
-    set_peer ${org_domain} ${peer_id}
+    get_default_orderer
+    set_peer_env 
+
     peer chaincode query \
-        -C $NETWORK_CHN_NAME \
-        -n $CC_NAME \
+        -C $CHANNEL_NAME \
+        -n $CHAINCODE_NAME \
         --tls \
         --cafile $ORDERER_TLS_CA \
         --peerAddresses "${CORE_PEER_ADDRESS}" \

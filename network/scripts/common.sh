@@ -97,20 +97,45 @@ load_organization_config() {
 }
 
 select_organization() {
+    # If ORG_CONFIG_FILE is explicitly set and different from last, load it directly
+    if [[ -n "${ORG_CONFIG_FILE}" && "${ORG_CONFIG_FILE}" != "${LAST_ORG_CONFIG_FILE}" ]]; then
+        
+        # Handle special case where user wants to skip org selection
+        if [[ "${ORG_CONFIG_FILE}" == "NONE" ]]; then
+            log_info "Organization selection skipped (ORG_CONFIG_FILE=NONE)"
+            return
+        fi
+        
+        # Validate the explicitly provided config file
+        if [[ ! -f "${ORG_CONFIG_FILE}" ]]; then
+            log_error "Explicitly specified organization config file not found: ${ORG_CONFIG_FILE}"
+            exit 1
+        fi
+        
+        log_info "Using explicitly specified organization: ${ORG_CONFIG_FILE}"
+        load_organization_config "${ORG_CONFIG_FILE}"
+        return
+    fi
 
-    local org_files=$(find "${NETWORK_CRP_PATH}" -maxdepth 1 -type f -name "*.yaml" -or -name "*.yml" | sort)
+    # If organization is already loaded and ORG_CONFIG_FILE wasn't explicitly changed, skip
+    if [[ -n "${LAST_ORG_CONFIG_FILE}" ]]; then
+        log_debug "Organization already loaded: ${ORG_DOMAIN}, skipping selection..."
+        return
+    fi
+
+    # Interactive selection when no organization is specified
+    local org_files=$(find "${NETWORK_CRP_PATH}" -maxdepth 1 -type f \( -name "*.yaml" -o -name "*.yml" \) | sort)
     local file_count=$(echo "$org_files" | grep -c .)
 
-    local selected=""
     if [[ "$file_count" -eq 0 ]]; then
         log_error "No organization configuration files found in ${NETWORK_CRP_PATH}"
         exit 1
     elif [[ "$file_count" -eq 1 ]]; then
-        selected="$org_files"
+        local selected="$org_files"
         log_info "Auto-selected (only option): $selected"
+        load_organization_config "${selected}"
     else
-        
-        FZF_OPTS=(
+        local FZF_OPTS=(
             --prompt="🏢 Organization › "
             --height=40%
             --border=rounded
@@ -125,29 +150,16 @@ select_organization() {
             --color='border:#89b4fa,prompt:#f38ba8'
         )
         
-        if [ "$ORG_CONFIG_FILE" == "NONE" ]; then
-            log_info "Configuration file is set to NONE, skipping pre-selection"
-            return
-        fi
-
-        [ -n "$ORG_CONFIG_FILE" ] && [ -f "$ORG_CONFIG_FILE" ] && FZF_OPTS+=(--query="$ORG_CONFIG_FILE")
-
-        selected=$(printf "%s\n" "$org_files" | fzf "${FZF_OPTS[@]}")
+        local selected=$(printf "%s\n" "$org_files" | fzf "${FZF_OPTS[@]}")
         
-        if [ -z "$selected" ]; then
+        if [[ -z "$selected" ]]; then
             log_error "No organization selected"
             exit 1
         fi
         
         log_info "Selected organization configuration: $selected"
+        load_organization_config "${selected}"
     fi
-
-    if [ "$selected" == "$LAST_ORG_CONFIG_FILE" ]; then
-        log_debug "Organization already selected: ${ORG_DOMAIN}, skipping reload..."
-        return
-    fi
-
-    load_organization_config "${selected}"
 }
 
 # ============================================================================
@@ -267,9 +279,7 @@ if [ -z "${NETWORK_CONFIG_LOADED}" ]; then
     export NETWORK_CONFIG_LOADED=true
 else
     log_debug "Network config already loaded, skipping..."
-    
-    # Only select the organization if it hasn't been selected yet
-    if [ -z "${LAST_ORG_CONFIG_FILE}" ]; then
-        select_organization
-    fi
 fi
+
+# Always check if organization needs to be selected or reloaded
+select_organization
