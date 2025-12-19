@@ -102,10 +102,10 @@ select_organization() {
     local file_count=$(echo "$org_files" | grep -c .)
 
     local selected=""
-    if [ "$file_count" -eq 0 ]; then
+    if [[ "$file_count" -eq 0 ]]; then
         log_error "No organization configuration files found in ${NETWORK_CRP_PATH}"
         exit 1
-    elif [ "$file_count" -eq 1 ]; then
+    elif [[ "$file_count" -eq 1 ]]; then
         selected="$org_files"
         log_info "Auto-selected (only option): $selected"
     else
@@ -125,14 +125,12 @@ select_organization() {
             --color='border:#89b4fa,prompt:#f38ba8'
         )
         
-        # If ORG_CONFIG_FILE is not a file, then skip the selection
-        if [ ! -f "$ORG_CONFIG_FILE" ]; then
-            log_info "Configuration file not required"
+        if [ "$ORG_CONFIG_FILE" == "NONE" ]; then
+            log_info "Configuration file is set to NONE, skipping pre-selection"
             return
         fi
 
-        # Using selected option if provided
-        [ -n "$ORG_CONFIG_FILE" ] && FZF_OPTS+=(--query="$ORG_CONFIG_FILE")
+        [ -n "$ORG_CONFIG_FILE" ] && [ -f "$ORG_CONFIG_FILE" ] && FZF_OPTS+=(--query="$ORG_CONFIG_FILE")
 
         selected=$(printf "%s\n" "$org_files" | fzf "${FZF_OPTS[@]}")
         

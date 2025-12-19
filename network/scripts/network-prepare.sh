@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source crypto-utils.sh
+source ids-utils.sh
+
 CRYPTO_CONFIG_FILE=$1
 
 # Check if the crypto config file is provided
@@ -13,11 +16,6 @@ if [ ! -f "$CRYPTO_CONFIG_FILE" ]; then
     log_error "Crypto config file '$CRYPTO_CONFIG_FILE' does not exist."
     exit 1
 fi
-
-export ORG_CONFIG_FILE=$1
-
-source crypto-utils.sh
-source ids-utils.sh
 
 # Create the necessary directories
 if [ ! -d "${NETWORK_ORG_PATH}" ]; then

@@ -3,17 +3,17 @@
 source common.sh
 
 # ---- For test only ----
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" --hard
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \ 
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" --hard
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" --hard
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \ 
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" --hard
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \ 
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-organization.yaml" --hard
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-organization.yaml" --hard
 # -----------------------
 
 sudo rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
@@ -21,53 +21,61 @@ sudo rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
 # -----------------------
 
 # Setup the crypto material
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \ 
 ./network-prepare.sh "${NETWORK_CRP_PATH}/orderer1.yaml"
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \ 
 ./network-prepare.sh "${NETWORK_CRP_PATH}/orderer2.yaml"
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \ 
 ./network-prepare.sh "${NETWORK_CRP_PATH}/orderer3.yaml"
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
 ./network-prepare.sh "${NETWORK_CRP_PATH}/organization.yaml"
 
 # NOTE: This needs to be done only once, when all the crypto material is generated and shared.
 # NOTE: Identities folder must exist and be populated with certificates.
+ORG_CONFIG_FILE="NONE" \ 
 ./network-init.sh
 
 # Docker setup
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
-    ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" # Start the orderer 1
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \ 
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" # Start the orderer 1
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
-    ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" # Start the orderer 2
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \ 
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" # Start the orderer 2
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
-    ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" # Start the orderer 3
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \ 
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" # Start the orderer 3
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
-    ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-organization.yaml" # Start the organization 1
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-organization.yaml" # Start the organization 1
 
 
 # Channel setup
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
-    ./network-join-orderer.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \ 
+./network-join-orderer.sh
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
-    ./network-join-orderer.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \ 
+./network-join-orderer.sh
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
-    ./network-join-orderer.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \ 
+./network-join-orderer.sh
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
-    ./network-join-organization.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
+./network-join-organization.sh
 
 # Install the chaincode on all peers of all organizations
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
-    ./chaincode-install.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
+./chaincode-install.sh
 
 # Approve the chaincode for each organization (only once)
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
-    ./chaincode-approve.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
+./chaincode-approve.sh
 
 # Commit the chaincode definition to the channel (only once)
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
-    ./chaincode-commit.sh
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \ 
+./chaincode-commit.sh
 
 # Test the chaincode functions
 # ./chaincode-invoke.sh "org1.testbed.local" ${DEFAULT_PEER_ID}  # TODO: set identity as environment variable
