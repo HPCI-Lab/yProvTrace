@@ -47,8 +47,7 @@ fi
 
 # Update and install required packages
 sudo apt-get update
-sudo apt-get install -y jq yq
-sudo apt autoremove -y
+sudo apt-get install -y jq yq fzf
 
 # Install the Hyperledger Fabric binaries if they are not already installed
 if [ ! -d "${NETWORK_BIN_PATH}" ]; then
