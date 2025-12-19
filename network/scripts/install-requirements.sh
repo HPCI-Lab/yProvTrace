@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export ORG_CONFIG_FILE="NONE"
+
 source common.sh
 
 download() {

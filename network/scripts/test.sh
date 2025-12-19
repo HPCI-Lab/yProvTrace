@@ -35,8 +35,7 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
 
 # NOTE: This needs to be done only once, when all the crypto material is generated and shared.
 # NOTE: Identities folder must exist and be populated with certificates.
-ORG_CONFIG_FILE="NONE" \
-    ./network-init.sh
+./network-init.sh
 
 # Docker setup
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \

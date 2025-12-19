@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export ORG_CONFIG_FILE="NONE"
+
 source network-utils.sh
 
 if [ ! -d "${NETWORK_CHN_PATH}" ]; then
