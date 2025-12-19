@@ -1,28 +1,27 @@
 #!/bin/bash
 
-. network-utils.sh
-. ids-utils.sh
+source network-utils.sh
+source ids-utils.sh
 
 ORG_CONFIGTX_FILE=$1
-ORG_DOMAIN=$2
 
-# Check if the organization domain is set
-if [ -z "${ORG_CONFIGTX_FILE}" ] || [ -z "${ORG_DOMAIN}" ]; then
-    echo "Usage: $0 <org_configtx_file> <org_domain>"
+# Check if the organization config file is passed
+if [ -z "${ORG_CONFIGTX_FILE}" ]; then
+    log_error "Organization config file not specified"
     exit 1
 fi
 
 # Check if the file exists
 if [ ! -f "${ORG_CONFIGTX_FILE}" ]; then
-    echo "Configuration file ${ORG_CONFIGTX_FILE} does not exist."
+    log_error "Configuration file ${ORG_CONFIGTX_FILE} does not exist"
     exit 1
 fi
 
 # verify the identity of the caller
-verify_identity ${ORG_DOMAIN}
+verify_identity
 
 # Fetch the latest channel configuration block and decode it to JSON
-fetch_channel_config ${ORG_DOMAIN}
+fetch_channel_config
 
 # Extract information from the organization definition
 ORG_NAME=$(yq -r '.Organizations[0].Name' ${ORG_CONFIGTX_FILE})

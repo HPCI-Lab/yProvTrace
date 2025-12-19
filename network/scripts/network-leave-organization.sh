@@ -1,23 +1,14 @@
 #!/bin/bash
 
-. crypto-utils.sh
-. ids-utils.sh
-
-ORG_DOMAIN=$1
-[[ "$2" == "--hard" ]] && HARD=true || HARD=false
-
-# Check if the domain is set
-if [ -z "${ORG_DOMAIN}" ]; then
-    echo "Usage: $0 <org_domain>"
-    exit 1
-fi
+source crypto-utils.sh
+source ids-utils.sh
 
 # Verify the identity of the caller
-verify_identity ${ORG_DOMAIN}
+verify_identity
 
 # Remove the public identity of the organization
-remove_identity ${ORG_DOMAIN}
+remove_identity
 
 # Remove the organization crypto [Optional]
-[[ "$HARD" == true ]] && delete_crypto ${ORG_DOMAIN}
+[[ "$1" == "--hard" ]] && delete_crypto
 

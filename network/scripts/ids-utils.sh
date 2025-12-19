@@ -117,9 +117,9 @@ remove_identity() {
     rm -rf "${org_dir}"
 
     if [ $? -ne 0 ]; then
-        log_error "Failed to delete cryptographic material for organization: ${ORG_DOMAIN}"
+        log_error "Failed to remove public identity for organization: ${ORG_DOMAIN}"
         exit 1
     fi
 
-    log_success "Cryptographic material deleted for organization: ${ORG_DOMAIN}"
+    log_success "Public identity removed for organization: ${ORG_DOMAIN}"
 }

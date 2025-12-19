@@ -13,6 +13,8 @@ calculate_package_id() {
 }
 
 resolveSequence() {
+    set_peer_env
+
     COMMITTED_CC_SEQUENCE=$(peer lifecycle chaincode querycommitted --channelID $NETWORK_CHN_NAME --name ${CC_NAME} 2>/dev/null | sed -n "/Version:/{s/.*Sequence: //; s/, Endorsement Plugin:.*$//; p;}")
     
     if [ -z "$COMMITTED_CC_SEQUENCE" ]; then

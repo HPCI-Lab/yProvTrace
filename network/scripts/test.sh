@@ -77,8 +77,6 @@ export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml"
 sleep 5
 ./chaincode-query.sh
 
-exit 0
-
 # Now, organization 4 wants to join the network (the flow of actions is strictly defined and must be followed in this order):
 # 1. The new organization needs to create its credentials and public identity
 # 2. The new organization starts its containers
@@ -92,68 +90,76 @@ exit 0
 # 10. Commit the chaincode (only one) to include the new organization in the endorsment policy (i.e. use the chaincode)
 
 # 1. Credentials and public identity creation
-./network-prep.sh "${NETWORK_CRP_PATH}/crypto-config-org4.yaml" "${NETWORK_CMP_PATH}/docker-compose-org4.yaml" # Done by organization 4
 
-# 2. Start the containers for organization 4
-./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-org4.yaml" # Start the containers for organization 4
+export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/joining.yaml"
+./network-prepare.sh "${NETWORK_CRP_PATH}/joining.yaml" # Prepare the crypto material for organization 4
+
+# 2. Start the containers for organization 2
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-joining.yaml" # Start the containers for organization 4
 
 # 3. Create a join request for the new organization
-./network-join-request.sh "${NETWORK_CTX_PATH}/org4/configtx.yaml" "org1.testbed.local" # TODO: set identity as environment variable
+export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml"
+./network-join-request.sh "${NETWORK_CTX_PATH}/joining/configtx.yaml"
 
 # 4. Approve the join request by signing it
-./network-approve-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org1.testbed.local" # TODO: set identity as environment variable
-./network-approve-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org2.testbed.local" # TODO: set identity as environment variable
-./network-approve-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org3.testbed.local" # TODO: set identity as environment variable
+./network-approve-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
 
 # 5. Submit the join request to the orderer (only once)
-./network-commit-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org1.testbed.local" # TODO: set identity as environment variable
+./network-commit-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
 
-# 6. The new organization 4 needs to join the channel and install the chaincode
-./network-join-organization.sh "org4.testbed.local" # TODO: set identity as environment variable
+# 6. The new organization 2 needs to join the channel and install the chaincode
+export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/joining.yaml"
+./network-join-organization.sh
 
-# 7. Set the anchor peer for organization 4 [to match the gossip bootstrap address in the compose file]
-./network-set-anchor-peer.sh "org4.testbed.local" ${DEFAULT_PEER_ID} # TODO: set identity as environment variable, assuming peer ID 1 is the anchor peer
+# 7. Set the anchor peer for organization 2 [to match the gossip bootstrap address in the compose file]
+./network-set-anchor-peer.sh
 
-# 8. Install and approve the chaincode for organization 4
-./chaincode-install.sh "org4.testbed.local"          # TODO: set identity as environment variable
+# 8. Install and approve the chaincode for organization 2
+./chaincode-install.sh 
 
-# 9. Approve the chaincode for all organizations
-./chaincode-approve.sh "org1.testbed.local"          # TODO: set identity as environment variable
-./chaincode-approve.sh "org2.testbed.local"          # TODO: set identity as environment variable
-./chaincode-approve.sh "org3.testbed.local"          # TODO: set identity as environment variable
-./chaincode-approve.sh "org4.testbed.local"          # TODO: set identity as environment variable
+# 9. Approve the chaincode for organization 2
+./chaincode-approve.sh
+
+export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml"
+./chaincode-approve.sh # approve again from org1
 
 # 10. Commit the chaincode to include the new organization in the endorsement policy
-./chaincode-commit.sh "org1.testbed.local"           # TODO: set identity as environment variable
+./chaincode-commit.sh
 
 # Test the chaincode invocation with the new organization
-./chaincode-invoke.sh "org4.testbed.local" ${DEFAULT_PEER_ID}         # TODO: set identity as environment variable
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/joining.yaml" \
+    ./chaincode-invoke.sh
 
 sleep 5 
 
 # Remove the new organization 4 from the network
-./network-leave-request.sh "${NETWORK_CTX_PATH}/org4/configtx.yaml" "org4.testbed.local" # TODO: set identity as environment variable
+./network-leave-request.sh "${NETWORK_CTX_PATH}/joining/configtx.yaml"
 
 # Approve the removal of organization 4 from the channel
-./network-approve-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org1.testbed.local" # TODO: set identity as environment variable
-./network-approve-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org2.testbed.local" # TODO: set identity as environment variable
-./network-approve-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org3.testbed.local" # TODO: set identity as environment variable
+./network-approve-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
+
+export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/joining.yaml"
+./network-approve-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
 
 # Commit the removal of organization 4 from the channel
-./network-commit-update.sh "${NETWORK_CHN_PATH}/org4_update_in_envelope.pb" "org1.testbed.local" # TODO: set identity as environment variable
+./network-commit-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
 
 # Remove the organization 4 crypto material and public identity
-./network-leave-organization.sh "org4.testbed.local" --hard     # TODO: set identity as environment variable
-
-# Stop the organization 4 containers
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-org4.yaml"
+./network-leave-organization.sh --hard
 
 # ---- For test only ----
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-ord1.yaml" --hard
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-ord2.yaml" --hard
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-ord3.yaml" --hard
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-org1.yaml" --hard
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-org2.yaml" --hard
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-org3.yaml" --hard
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-org4.yaml" --hard
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
+    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" --hard
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
+    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" --hard
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
+    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/organization.yaml" \
+    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-organization.yaml" --hard
+
+ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/joining.yaml" \
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-joining.yaml" --hard
 # -----------------------
