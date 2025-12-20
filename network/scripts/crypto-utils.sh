@@ -1,11 +1,40 @@
 #!/bin/bash
 
+# ============================================================================
+# yProvTrace: Cryptographic Material Utility Functions
+# ============================================================================
+# Description:
+#   Provides utilities for generating, managing, and deleting cryptographic
+#   materials (certificates, keys, MSP structures) for Fabric organizations.
+#
+# Key Operations:
+#   1. Generate crypto material using cryptogen
+#   2. Create connection profiles (CCP) for client applications
+#   3. Clean up crypto material for organization removal
+#
+# Functions:
+#   - generate_crypto() : Generate MSP and TLS certificates
+#   - generate_ccp()    : Create connection profile JSON
+#   - delete_crypto()   : Remove organization crypto material
+#
+# Dependencies:
+#   - cryptogen      : Fabric tool for certificate generation
+#   - common.sh      : Configuration and path management
+#   - CCP template   : JSON template for connection profiles
+# ============================================================================
+
 source common.sh
 
-# ============================================================================
-# Cryptographic Material Utility Functions
-# ============================================================================
-
+# ----------------------------------------------------------------------------
+# Generate Crypto Material
+# ----------------------------------------------------------------------------
+# Description: Generates MSP and TLS certificates for an organization
+# Parameters:
+#   $1 - Path to cryptogen configuration file (YAML)
+# Purpose: Creates all necessary certificates and keys for organization
+# Output: MSP structure in NETWORK_ORG_PATH directory
+# Exit: 1 if generation fails
+# ----------------------------------------------------------------------------
 generate_crypto() {
 
     local CRYPTO_CONFIG_FILE=$1
@@ -20,6 +49,16 @@ generate_crypto() {
     log_success "Crypto material generated for organization: ${ORG_DOMAIN}"
 }
 
+# ----------------------------------------------------------------------------
+# Generate Connection Profile (CCP)
+# ----------------------------------------------------------------------------
+# Description: Creates a connection profile for client application connections
+# Purpose: Provides SDK-compatible JSON configuration for network access
+# Output: connection-<orgname>.json in identity directory
+# Note: Only generated for peer organizations (skipped for orderers)
+# Template: Uses templates/ccp-template.json as base
+# Exit: 1 if CCP generation fails
+# ----------------------------------------------------------------------------
 generate_ccp() {
 
     # * Assumes that organization is loaded
@@ -52,6 +91,15 @@ generate_ccp() {
     log_success "CCP generated successfully for: ${ORG_NAME}"
 }
 
+# ----------------------------------------------------------------------------
+# Delete Crypto Material
+# ----------------------------------------------------------------------------
+# Description: Removes all cryptographic material for an organization
+# Purpose: Clean up during organization removal or reset
+# Note: Deletes entire organization directory from NETWORK_ORG_PATH
+# Warning: This is a destructive operation - cannot be undone
+# Exit: 1 if deletion fails
+# ----------------------------------------------------------------------------
 delete_crypto() {
 
     # * Assumes that organization is loaded

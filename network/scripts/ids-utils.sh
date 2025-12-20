@@ -1,7 +1,44 @@
 #!/bin/bash
 
+# ============================================================================
+# yProvTrace: Identity & Public Certificate Management Utilities
+# ============================================================================
+# Description:
+#   Manages public identity distribution and cryptographic verification for
+#   organizations in the Fabric network. Handles MSP sharing, endpoint
+#   registration, and identity verification.
+#
+# Key Concepts:
+#   - Public Identity: Certificates shared across network (TLS, CA certs)
+#   - Private Identity: Keys kept local to organization
+#   - Endpoints: Service discovery information (hostnames, ports)
+#
+# Functions:
+#   - copy_msp_folder()       : Share public MSP/TLS certificates
+#   - generate_endpoints()    : Create service endpoint metadata
+#   - verify_identity()       : Cryptographic identity verification
+#   - get_tls_identities()    : Collect TLS info from all peers
+#   - remove_identity()       : Delete public identity during removal
+#
+# Identity Flow:
+#   1. Organization generates crypto material (private)
+#   2. Public certs copied to identities folder (shared)
+#   3. Other organizations use public certs for TLS/verification
+# ============================================================================
+
 source common.sh
 
+# ----------------------------------------------------------------------------
+# Copy MSP Folder
+# ----------------------------------------------------------------------------
+# Description: Shares public MSP and TLS certificates with the network
+# Purpose: Distributes trust anchors (CA certs) and TLS certs to identities
+# Copies:
+#   - MSP folder (CA and TLS CA certificates)
+#   - Admin certificate (for ACL verification)
+#   - Orderer TLS server certificate (for orderers only)
+# Note: Assumes organization is loaded via ORG_CONFIG_FILE
+# ----------------------------------------------------------------------------
 copy_msp_folder() {
 
     # * Assumes that organization is loaded 
@@ -32,6 +69,19 @@ copy_msp_folder() {
     log_success "MSP/TLS folders shared for organization: ${ORG_DOMAIN}"
 }
 
+# ----------------------------------------------------------------------------
+# Generate Endpoints
+# ----------------------------------------------------------------------------
+# Description: Creates service endpoint metadata file for the organization
+# Purpose: Provides service discovery information to other members
+# Output: endpoints.json with hostname, domain, and listening addresses
+# Fields:
+#   - hostname      : Service hostname (peer0, orderer, etc.)
+#   - domain        : Organization domain
+#   - address       : Listen address (host:port)
+#   - adminAddress  : Admin API address (orderers only)
+# Note: Assumes organization is loaded via ORG_CONFIG_FILE
+# ----------------------------------------------------------------------------
 generate_endpoints() {
     
     # * Assumes that organization is loaded
@@ -65,6 +115,19 @@ generate_endpoints() {
     log_success "Endpoints generated for: ${ORG_HOSTNAME}.${ORG_DOMAIN}"
 }
 
+# ----------------------------------------------------------------------------
+# Verify Identity
+# ----------------------------------------------------------------------------
+# Description: Cryptographically verifies organization admin identity
+# Purpose: Ensures private key matches public certificate before operations
+# Method:
+#   1. Generate random challenge
+#   2. Sign challenge with private key
+#   3. Verify signature using public certificate
+# Security: Prevents unauthorized access using stolen certificates
+# Note: Assumes organization is loaded via ORG_CONFIG_FILE
+# Exit: 1 if verification fails or certificates missing
+# ----------------------------------------------------------------------------
 verify_identity() {
 
     # * Assumes that organization is loaded
@@ -96,6 +159,16 @@ verify_identity() {
     fi
 }
 
+# ----------------------------------------------------------------------------
+# Get TLS Identities
+# ----------------------------------------------------------------------------
+# Description: Collects TLS connection info from all peer organizations
+# Purpose: Builds peer address list for multi-org endorsement
+# Output: Space-separated string of --peerAddresses and --tlsRootCertFiles
+# Usage: Used in chaincode commit and invoke operations
+# Format: "--peerAddresses addr1 --tlsRootCertFiles cert1 --peerAddresses..."
+# Note: Scans identities folder for all peer organizations
+# ----------------------------------------------------------------------------
 get_tls_identities() {
 
     # * Assumes that network paths are set
@@ -109,6 +182,15 @@ get_tls_identities() {
     done
 }
 
+# ----------------------------------------------------------------------------
+# Remove Identity
+# ----------------------------------------------------------------------------
+# Description: Removes public identity for an organization leaving the network
+# Purpose: Clean up shared certificates during organization removal
+# Warning: Destructive operation - removes all public identity data
+# Note: Assumes organization is loaded via ORG_CONFIG_FILE
+# Exit: 1 if removal fails
+# ----------------------------------------------------------------------------
 remove_identity() {
 
     # * Assumes that organization is loaded

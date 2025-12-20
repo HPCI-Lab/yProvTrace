@@ -1,14 +1,49 @@
 #!/bin/bash
 
+# ============================================================================
+# yProvTrace: Network & Channel Utility Functions
+# ============================================================================
+# Description:
+#   Core utilities for Hyperledger Fabric channel operations including
+#   genesis block generation, member joins, configuration updates, and
+#   anchor peer management.
+#
+# Key Operations:
+#   1. Channel initialization (genesis block)
+#   2. Node joining (orderers and peers)
+#   3. Dynamic membership (add/remove organizations)
+#   4. Anchor peer configuration
+#   5. Configuration update workflow
+#
+# Functions:
+#   - generate_genesis()          : Create channel genesis block
+#   - join_orderer()              : Add orderer to channel
+#   - join_peer()                 : Add peer to channel
+#   - generate_definition()       : Create org definition from configtx
+#   - fetch_channel_config()      : Retrieve current channel config
+#   - create_update_transaction() : Build config update transaction
+#   - sign_update_transaction()   : Sign configuration update
+#   - commit_update_transaction() : Submit update to orderer
+#   - set_anchor_peer()           : Configure anchor peer for org
+#
+# Configuration Files:
+#   CURRENT  : Current channel configuration (JSON)
+#   MODIFIED : Modified channel configuration (JSON)
+# ============================================================================
+
 source common.sh
 
 CURRENT=${NETWORK_CHN_PATH}/config.json
 MODIFIED=${NETWORK_CHN_PATH}/modified_config.json
 
-# ============================================================================
-# Network/Channel Utility Functions
-# ============================================================================
-
+# ----------------------------------------------------------------------------
+# Generate Genesis Block
+# ----------------------------------------------------------------------------
+# Description: Creates the genesis block for the application channel
+# Purpose: Initializes channel with founding members and policies
+# Output: genesis.block in NETWORK_CHN_PATH
+# Exit: 1 if genesis block creation fails
+# ----------------------------------------------------------------------------
 generate_genesis() {
 
     local genesis_file=$(get_genesis_block)
@@ -27,6 +62,14 @@ generate_genesis() {
     log_success "Genesis block created successfully at ${genesis_file}"
 }
 
+# ----------------------------------------------------------------------------
+# Join Orderer to Channel
+# ----------------------------------------------------------------------------
+# Description: Adds orderer node to channel consensus cluster
+# Authentication: TLS client certificates
+# Purpose: Enables orderer to participate in channel consensus
+# Exit: 1 if join operation fails
+# ----------------------------------------------------------------------------
 join_orderer() {
     set_orderer_env
     local genesis_file=$(get_genesis_block)
@@ -47,6 +90,14 @@ join_orderer() {
     log_success "Orderer ${ORDERER_HOSTNAME} joined channel '${CHANNEL_NAME}' successfully."
 }
 
+# ----------------------------------------------------------------------------
+# Join Peer to Channel
+# ----------------------------------------------------------------------------
+# Description: Adds peer node to channel
+# Purpose: Enables peer to maintain ledger and execute chaincode
+# Requirement: Organization must be in channel configuration
+# Exit: 1 if join operation fails
+# ----------------------------------------------------------------------------
 join_peer() {
     set_peer_env
     local genesis_file=$(get_genesis_block)
@@ -61,6 +112,16 @@ join_peer() {
     log_success "Peer ${CORE_PEER_ADDRESS} joined channel '${CHANNEL_NAME}' successfully."
 }
 
+# ----------------------------------------------------------------------------
+# Generate Organization Definition
+# ----------------------------------------------------------------------------
+# Description: Creates organization definition from configtx file
+# Parameters:
+#   $1 - Path to organization's configtx.yaml
+# Output: JSON file with organization MSP, policies, and endpoints
+# Returns: Path to generated definition file
+# Exit: 1 if generation fails
+# ----------------------------------------------------------------------------
 generate_definition() {
 
     local configtx_file=$1
@@ -90,6 +151,18 @@ generate_definition() {
     echo "${definition_file}"
 }
 
+# ----------------------------------------------------------------------------
+# Fetch Channel Configuration
+# ----------------------------------------------------------------------------
+# Description: Retrieves and decodes current channel configuration
+# Process:
+#   1. Fetch latest config block from orderer
+#   2. Decode protobuf to JSON
+#   3. Extract configuration payload
+# Output: Stores decoded config in CURRENT (config.json)
+# Purpose: Required before creating configuration updates
+# Exit: 1 if fetch or decode fails
+# ----------------------------------------------------------------------------
 fetch_channel_config() {
 
     get_default_orderer
@@ -129,6 +202,20 @@ fetch_channel_config() {
     log_success "Channel configuration for channel '${CHANNEL_NAME}' fetched successfully."
 }
 
+# ----------------------------------------------------------------------------
+# Create Configuration Update Transaction
+# ----------------------------------------------------------------------------
+# Description: Generates config update transaction from current/modified configs
+# Parameters:
+#   $1 - Organization name (used in output filename)
+# Process:
+#   1. Encode current config to protobuf
+#   2. Encode modified config to protobuf
+#   3. Compute delta (update) between them
+#   4. Wrap update in envelope for signing
+# Output: <orgname>_update_in_envelope.pb
+# Exit: 1 if any encoding or computation step fails
+# ----------------------------------------------------------------------------
 create_update_transaction() {
 
     local org_name=$1
@@ -199,6 +286,16 @@ create_update_transaction() {
     log_success "Update transaction for organization '${org_name}' created successfully."
 }
 
+# ----------------------------------------------------------------------------
+# Sign Configuration Update Transaction
+# ----------------------------------------------------------------------------
+# Description: Adds organization's signature to config update
+# Parameters:
+#   $1 - Path to update transaction envelope
+# Purpose: Multi-signature approval workflow
+# Note: Signature is added to the envelope file
+# Exit: 1 if signing fails
+# ----------------------------------------------------------------------------
 sign_update_transaction() {
 
     local update_transaction=$1
@@ -214,6 +311,20 @@ sign_update_transaction() {
     log_success "Update transaction signed successfully"
 }
 
+# ----------------------------------------------------------------------------
+# Commit Configuration Update Transaction
+# ----------------------------------------------------------------------------
+# Description: Submits signed config update to orderer for commitment
+# Parameters:
+#   $1 - Path to signed update transaction envelope
+# Purpose: Finalizes configuration change on the channel
+# Process:
+#   1. Submit transaction to orderer
+#   2. Orderer validates signatures
+#   3. Orderer commits update to channel
+#   4. Clean up temporary files
+# Exit: 1 if commit fails
+# ----------------------------------------------------------------------------
 commit_update_transaction() {
     local update_transaction=$1
 
@@ -239,6 +350,18 @@ commit_update_transaction() {
     log_success "Update transaction committed to channel '${CHANNEL_NAME}' successfully."
 }
 
+# ----------------------------------------------------------------------------
+# Set Anchor Peer
+# ----------------------------------------------------------------------------
+# Description: Configures anchor peer for organization in channel
+# Purpose: Enables cross-organization gossip and service discovery
+# Process:
+#   1. Fetch current channel configuration
+#   2. Add/update AnchorPeers section for organization
+#   3. Create and commit configuration update
+# Note: Anchor peer info (host/port) from organization configuration
+# Exit: 1 if anchor peer configuration fails
+# ----------------------------------------------------------------------------
 set_anchor_peer() {
 
     set_peer_env
