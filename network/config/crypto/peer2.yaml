@@ -11,6 +11,6 @@ PeerOrgs:
       Ports:
         ListenPort: 7055
         OperationsPort: 9055
-    DefaultOrdererDomain: ord1.testbed.local
+    DefaultOrdererDomain: ord2.testbed.local
     Users:
       Count: 1 # Number of users (excluding admin) per organization

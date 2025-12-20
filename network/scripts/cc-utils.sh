@@ -118,6 +118,8 @@ commit_chaincode() {
 
 invoke_chaincode() {
 
+    # Test function to invoke the chaincode
+
     # TODO: add params
     # TODO: single function for all invokations or separate? Maybe contract-utils.sh ?
 
@@ -154,6 +156,8 @@ invoke_chaincode() {
 }
 
 query_chaincode() {
+
+    # Test function to query the chaincode
 
     PID="pid_test_${ORG_DOMAIN}"
     JSON_PAYLOAD="{\"Args\":[\"ReadResource\",\"$PID\"]}"

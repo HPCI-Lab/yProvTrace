@@ -14,65 +14,78 @@
 
 ---
 
-## Introduction
+## 📖 Introduction
 
 **yProv** is a collaborative initiative between the [University of Trento](https://www.unitn.it) and [CMCC](https://www.cmcc.it), aimed at developing a comprehensive system for managing and exploring provenance information.
 
 Within this ecosystem, **yProvTrace** introduces a **blockchain-based layer** that strengthens the **trustworthiness and auditability** of provenance information. Built on **Hyperledger Fabric**, it enables the secure and immutable recording of provenance data, promoting **transparency, accountability and integrity** in collaborative research environments.
 
+This repository accompanies a **Master’s Thesis** and focuses on the design and implementation of a configurable, extensible Fabric network with dynamic organization management and chaincode lifecycle automation.
+
 ---
 
 ## 📋 Table of Contents
 
-* [Getting Started](#-getting-started)
-    * [Prerequisites](#-prerequisites)
-    * [Installation](#-installation)
-    * [Quick Start](#-quick-start)
+* [Introduction](#-introduction)
 * [Project Overview](#-project-overview)
+* [Getting Started](#-getting-started)
+    * [Prerequisites](#prerequisites)
+    * [Installation](#installation)
+    * [Quick Start](#quick-start)
 * [Network Module](#-network-module)
-    * [Folder Structure](#-folder-structure)
-    * [Configuration](#-configuration)
-    * [Network Operations](#-network-operations)
-        * [Initial Network Setup](#-initial-network-setup)
-        * [Chaincode Lifecycle](#-chaincode-lifecycle)
-        * [Dynamic Organization Management](#-dynamic-organization-management)
-    * [Script Reference](#-script-reference)
-    * [Basic Setup](#-basic-setup)
-    * [Security Considerations](#-security-considerations)
-    * [Troubleshooting](#-troubleshooting)
+    * [Folder Structure](#folder-structure)
+    * [Configuration](#configuration)
+    * [Network Lifecycle](#network-lifecycle)
+    * [Chaincode Lifecycle](#chaincode-lifecycle)
+    * [Dynamic Organization Management](#dynamic-organization-management)
+    * [Script Reference](#script-reference)
+    * [Basic Setup](#basic-setup)
+    * [Security Considerations](#security-considerations)
+    * [Troubleshooting](#troubleshooting)
 * [Chaincode Module](#-chaincode-module)
-    * [Folder Structure](#-folder-structure-1)
-    * [Chaincode Functions](#-chaincode-functions)
-    * [Resource Schema](#-resource-schema)
+    * [Folder Structure](#folder-structure-1)
+    * [Chaincode Functions](#chaincode-functions)
+    * [Resource Schema](#resource-schema)
 * [Acknowledgments](#-acknowledgments)
 * [Additional Resources](#-additional-resources)
 * [License](#-license)
 
 ---
 
+## 📊 Project Overview
+
+This project consists of **two main components**:
+
+| Module             | Description                                                              | Folder       |
+| ------------------ | ------------------------------------------------------------------------ | ------------ |
+| [**Network**](#-network-module)    | Complete Hyperledger Fabric network with dynamic organization management | `network/`   |
+| [**Chaincode**](#-chaincode-module)   | Smart contract defining resource lifecycle operations                    | `chaincode/` |
+
+---
+
 ## 🚀 Getting Started
 
-### 🔧 Prerequisites
+### Prerequisites
 
 To run this project, ensure that all the following dependencies are installed and available: 
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| 🐳 [Docker](https://www.docker.com/) | Latest | Container runtime |
+| 🐳 [Docker](https://www.docker.com/) | 28.5.0 or lower | Container runtime |
+| 🟢 [Node.js](https://nodejs.org/) | v18+ | Chaincode development and execution |
 
-### 📥 Installation
+### Installation
 
-To get started with this project, first clone the repository to your local machine:
+Clone the repository and move into the project directory:
 
 ```bash
-# Clone the repository
 git clone https://github.com/HPCI-Lab/yProvTrace.git
 cd yProvTrace
 ```
 
-### ⚡ Quick Start
+### Quick Start
 
-To quickly set up and run the Hyperledger Fabric network, follow these steps:
+To deploy a complete test network with minimal setup:
 
 1. **Install the Requirements**:
    ```bash
@@ -87,305 +100,264 @@ To quickly set up and run the Hyperledger Fabric network, follow these steps:
 
 3. **Run the Test Networks**:
    ```bash
-   # Run a test network with 3 organizations and 3 orderers (default setup)
    ./test-3-orgs.sh 
-
-   # Run a test network with 5 (3 + 2 dynamically added) organizations and 3 orderers
-   ./test-5-orgs.sh
    ```
 
 > [!TIP]  
-> To better understand the default setup, refer to the [Basic Setup](#-basic-setup) section.
-
----
-
-## 🧩 Project Overview
-
-This project consists of **two main components**:
-
-| Module             | Description                                                              | Folder       |
-| ------------------ | ------------------------------------------------------------------------ | ------------ |
-| 🌐 [**Network**](#-network-module)    | Complete Hyperledger Fabric network with dynamic organization management | `network/`   |
-| 🧱 [**Chaincode**](#-chaincode-module)   | Smart contract defining resource lifecycle operations                    | `chaincode/` |
+> To better understand the default setup, refer to the [Basic Setup](#basic-setup) section.
 
 ---
 
 ## 🌐 Network Module
 
-### 📁 Folder Structure
+### Folder Structure
 
 ```
 network/
-├── 📁 compose/                     # Docker Compose files
-├── 📁 config/                      # Fabric configuration files
-├── 📁 configtx/                    # Channel configuration files                   
-├── 📁 crypto/                      # Crypto definition files
+├── 📁 compose/                     # Docker Compose definitions
+├── 📁 config/                      # Network and Fabric configuration
+|   ├── 📁 crypto/                  # Organization configuration files
+|   ├── 📁 fabric/                  # Fabric configuration files
+|   └── network.yaml                
+├── 📁 configtx/                    # Channel configuration                 
 ├── 📁 scripts/                     # Automation scripts
-├── 📁 templates/                   # CCPs for third-parties
-└──  network.config                 # Network configuration file
+└── 📁 templates/                   # Connection profiles (CCPs)
 ```
 
 ---
 
-### 🧰 Configuration
+### Configuration
 
-The (`network.config`) configuration file contains all the necessary variables for the network definition, including the Hyperledger Fabric settings and the default identity to use.
+The network is fully parameterized through `config/network.yaml`, which defines:
+- Network name and channel
+- Chaincode parameters (name, version, language)
+- Fabric parameters (version)
+- Docker parameters (project name)
+- Paths definitions
 
-> [!TIP]  
-> You can configure it according to your requirements.
+#### Example Configuration
+
+```yaml
+network:
+  name: "yprovtrace-network"
+  channel: "mychannel"
+  chaincode:
+    name: "cc-test"
+    language: "javascript"
+    version: "1.0"
+
+docker:
+  project: "testbed"
+
+fabric:
+  version: "2.5.14"
+
+# Paths ...
+```
+
+---
+
+### Network Lifecycle
+
+> [!WARNING]  
+> All operational scripts must be executed from `network/scripts`. Please refer to the [Script Reference](#script-reference) section for detailed information about each script.
 
 ```bash
-# Fabric Version
-FABRIC_VERSION="2.5.13"
-
-# Network Identifiers
-NETWORK_CHN_NAME="mychannel"
-# Paths definitions ...
-
-# Defaults variables
-DEFAULT_ORG_DOMAIN="org1.tesbed.local"
-DEFAULT_ORD="orderer.ord1.testbed.local"
-DEFAULT_PEER_ID=1
-DEFAULT_ENDPOINT="hlf1.disi.unitn.it"
-
-# Chaincode Settings
-CC_NAME="cc-test"
-CC_SRC_LANG="javascript"
-# Chaincode variables ...
+cd network/scripts
 ```
 
----
+Initially, a leader organization among the network members should be chosen, ensuring critical operations are executed only once.
 
-### 🔗 Network Operations
-
-> [!IMPORTANT]  
-> All scripts related to network operations must be executed from the `network/scripts/` directory. Furthermore, please refer to the [Script Reference](#-script-reference) section for detailed information about each script and its parameters.
-
-> [!NOTE]  
-> In a production environment, network federated operations might be a little tricky since they often require strict cooperation and coordination among all the network members.
-
-### 📦 Initial Network Setup
-
-> [!IMPORTANT]  
-> Before proceeding, a leader organization should be chosen, ensuring critical operations are executed only once.
+Moreover, `network/identities` and `network/channel` folders must be **shared** among all the organizations, as they contain public certificates and channel artifacts needed for network operations.
 
 #### Requirements Installation
 
+If not already done, install Fabric binaries and dependencies:
+
 ```bash
-# Install Hyperledger Fabric binaries and dependencies
-cd network/scripts
 ./install-requirements.sh
 ```
 
 > [!WARNING]  
-> After the above operation, please ensure that Hyperledger Fabric binaries are available under the `network/bin` folder.
+> Before proceeding, please ensure that all binaries are available under the `network/bin` folder.
 
 #### Cryptographic Material Generation
 
-Each organization must generate its own credentials (private keys and public certificates) using the provided configuration files. This increases security by ensuring private keys are never shared, while public certificates are distributed via the shared `network/identities` folder.
+Each organization independently generates its private credentials:
 
 ```bash
-# 1️⃣ Generate cryptographic material for each organization
-./network-prep.sh <crypto-config-file> <docker-compose-file>
+./network-prepare.sh <organization-config.yaml>
 ```
-> [!IMPORTANT]  
-> Crypto config files and docker compose files should be distributed by the **leader organization** and adjusted accordingly.
 
-#### Genesis Block Generation
+Private keys remain local, while public certificates are saved under `network/identities` in order to be shared.
 
-The leader organization is responsible for **generating** and **distributing** the genesis block. This block is saved under the `network/channel` directory and it is mainly used for channel creation and organization joining.
+#### Genesis Block Generation (Leader Only)
 
 ```bash
-# 2️⃣ Generate genesis block (leader only)
 ./network-init.sh
 ```
 
-> [!CAUTION]  
-> In production environments, `network/identities` and `network/channel` directories must be shared among all organizations.
+The generated genesis block must be distributed to all participants before channel joining.
 
 #### Containers startup and channel joining
 
-After all organizations have generated their credentials and the genesis block has been distributed, each organization can start its Docker containers and join the channel.
-
 ```bash
-# 3️⃣ Start Docker containers
-./docker-up.sh <docker-compose-file>
-
-# 4️⃣ Join orderers and organizations to the channel
-
-# If this is an orderer organization:
-./network-join-orderer.sh <orderer-hostname>
-
-# If this is a regular organization:
-./network-join-organization.sh <org-domain>
+./docker-up.sh <docker-compose.yaml>
 ```
 
-> [!TIP]  
-> Orderers and peers have different roles: **peers** execute chaincodes, maintain a copy of the channel ledger and host the world state, while **orderers** are responsible for ordering transactions into blocks and ensuring consistency across the network.
+If this is an orderer organization:
+```bash
+./network-join-orderer.sh
+```
 
-### 🔑 Chaincode Lifecycle
+If this is a peer organization:
+```bash
+./network-join-peer.sh
+```
 
-The chaincode defines the business logic of the blockchain application that runs on the peer nodes. 
+Orderer and peer organizations follow distinct join procedures.
 
-#### Chaincode Installation
+> [!NOTE]  
+> Orderer and peer organizations follow distinct join procedures.
 
-Chaincode source code and metadata are bundled into a single file, typically a tarball, with a unique **package ID**. This package is the deployable unit that gets installed on the peers of each organization.
+### Chaincode Lifecycle
+
+The chaincode lifecycle follows the Fabric v2.x model:
+
+1. Package
+2. Install
+3. Approve (all organizations)
+4. Commit (once)
 
 ```bash
 # 1️⃣ Package the chaincode 
 ./chaincode-package.sh
 
-# 2️⃣ Install chaincode on organization's peers
-./chaincode-install.sh <org-domain>
-```
+# 2️⃣ Install chaincode on the peer of each organization
+./chaincode-install.sh
 
-#### Chaincode Approval
+# 3️⃣ All orgs: approve chaincode
+./chaincode-approve.sh 
 
-Once the chaincode is installed, each organization must formally approve its definition (e.g. name, version and endorsement policies) for the channel. This ensures that all the members of the federation agree on the same chaincode.
-
-```bash
-# 3️⃣ Approve chaincode (each organization)
-./chaincode-approve.sh <org-domain>
+# 4️⃣ Commit chaincode to channel (only once)
+./chaincode-commit.sh
 ```
 
 > [!IMPORTANT]  
-> For this project, in order to reach consensus, all the organizations must approve the chaincode definition.
+> As **design choice**, unanimous chaincode approval is enforced to ensure strong consensus among network members.
 
-#### Chaincode Commitment
+### Dynamic Organization Management
 
-After all organizations have approved the chaincode, it can be **committed** to the channel. This makes the chaincode active and ready to execute invoke and query transactions.
+The network supports runtime addition and removal of organizations through channel configuration updates.
 
-```bash
-# 4️⃣ Commit chaincode to channel (only once)
-./chaincode-commit.sh <org-domain>
+Operations include:
 
-# 5️⃣ Test chaincode operations (optional)
-./chaincode-invoke.sh <org-domain> <peer-id>
-./chaincode-query.sh <org-domain> <peer-id>
-```
+* Join/leave request generation
+* Multi-organization approval
+* Configuration commitment
 
-### 🔄 Dynamic Organization Management
+This approach avoids full network restarts and aligns with real-world consortium governance models.
 
-The network supports dynamic addition and removal of organizations without requiring a complete network restart. This is achieved through configuration updates and channel reconfiguration.
+#### Example of Runtime Joining
 
-#### Adding a New Organization
+In the following example, the [Basic Setup](#basic-setup) with 3 organizations is extended by adding a 4th organization (`organization4`).
 
-> [!NOTE]  
-> In the following example, the [Basic Setup](#-basic-setup) with 3 organizations is extended by adding a 4th organization (`org4.testbed.local`).
-
-Initially, the new organization must generate its cryptographic material and start its Docker containers, as the other organizations did during the initial setup. Its public certificates must also be shared via the `network/identities` folder.
+To add a `organization4`, it must first generate its private credentials and start its peer container:
 
 ```bash
-# 1️⃣ Org 4: Generate credentials
-./network-prep.sh crypto-config-org4.yaml docker-compose-org4.yaml
-
-# 2️⃣ Org 4: Start containers
-./docker-up.sh docker-compose-org4.yaml
+./network-prepare.sh organization4.yaml
+./docker-up.sh docker-compose-organization4.yaml
 ```
 
-Then, an existing organization (e.g. `org1.testbed.local`) must generate a join request to add the new organization to the channel. This request is saved as a configuration update proposal in the file `org4_update_in_envelope.pb`, located by default under the shared `network/channel` directory. All existing network members must approve this proposal before it can be committed and the new organization becomes an official channel member.
+Then, the addition process can begin, following the steps described below:
+
+1. Create join request
+2. Approve join request (majority network members)
+3. Commit join request (once)
 
 ```bash
-# 3️⃣ Existing org (e.g. org1.testbed.local): Create join request
-./network-join-request.sh configtx-org4.yaml org1.testbed.local
+# 1️⃣ Create join request (by an existing org, e.g. organization1)
+./network-join-request.sh configtx-organization4.yaml
 
-# 4️⃣ All orgs: Approve join request
-./network-approve-update.sh org4_update_in_envelope.pb org1.testbed.local
-./network-approve-update.sh org4_update_in_envelope.pb org2.testbed.local
-./network-approve-update.sh org4_update_in_envelope.pb org3.testbed.local
+# 2️⃣ Approve the request (majority required)
+./network-approve-update.sh org4_update_in_envelope.pb
 
-# 5️⃣ Existing org (e.g. org1.testbed.local): Commit update
-./network-commit-update.sh org4_update_in_envelope.pb org1.testbed.local
+# 3️⃣ Commit the update (only once)
+./network-commit-update.sh org4_update_in_envelope.pb
 ```
 
-At this point, the new organization has been successfully added to the channel. As with the existing members, it can now have its peer(s) join the channel and set its anchor peer.
-
-The **anchor peer** allows peer discovery and cross-organization communication within the channel via the gossip protocol.
-
-> [!NOTE]  
-> This step is required now because the new organization was not part of the channel when the original members set their anchor peers.
+At this point, the new organization can join the channel and set its **anchor peer**.
 
 ```bash
-# 6️⃣ Org 4: Join channel and set anchor peer
-./network-join-organization.sh org4.testbed.local
-./network-set-anchor-peer.sh org4.testbed.local 1
+./network-join-peer.sh
+./network-set-anchor-peer.sh
 ```
 
-Finally, the chaincode must be installed on the new organization’s peer(s), approved and then committed once again on the channel.
+Finally, the chaincode must be installed and approved by the new member, followed by a re-commit by an existing organization.
 
 > [!CAUTION]  
-> After the new organization has joined the channel, all the federation members must approve the chaincode definition again to include the new member.
+> After `organization4` has joined the channel, **all network members** must approve the chaincode definition again to include the new organization. Please refer to the [Chaincode Lifecycle](#chaincode-lifecycle) section for more details.
 
-```bash
-# 7️⃣ Org 4: Install the chaincode
-./chaincode-install.sh org4.testbed.local
+#### Example of Runtime Removal
 
-# All orgs (including org4): Approve the chaincode again
-./chaincode-approve.sh org1.testbed.local 
-./chaincode-approve.sh org2.testbed.local 
-./chaincode-approve.sh org3.testbed.local 
-./chaincode-approve.sh org4.testbed.local 
+In the following example, the network described in [Example of Runtime Joining](#example-of-runtime-joining) is reduced by removing the 4th organization (`organization4`) following the steps described below:
 
-# Existing org: Commit the chaincode again (only once)
-./chaincode-commit.sh org1.testbed.local 
-```
-
-#### Removing an Existing Organization
-
-As for adding a new organization, the removal process is almost the same, but in reverse order. An existing organization (e.g. `org1.testbed.local`) must create a leave request for the organization to be removed (e.g. `org4.testbed.local`). This request must then be approved by the majority of the other members before it can be committed.
+1. Create leave request
+2. Approve leave request (majority network members)
+3. Commit leave request (once)
 
 ```bash
 # 1️⃣ Create leave request
-./network-leave-request.sh configtx-org4.yaml org1.testbed.local
+./network-leave-request.sh organization4.yaml
 
-# 2️⃣ Approve removal (majority required)
-./network-approve-update.sh org4_update_in_envelope.pb org1.testbed.local
-./network-approve-update.sh org4_update_in_envelope.pb org2.testbed.local
-./network-approve-update.sh org4_update_in_envelope.pb org3.testbed.local
+# 2️⃣ Approve the request (majority required)
+./network-approve-update.sh org4_update_in_envelope.pb
 
-# 3️⃣ Commit removal
-./network-commit-update.sh org4_update_in_envelope.pb org1.testbed.local
+# 3️⃣ Commit the update (only once)
+./network-commit-update.sh org4_update_in_envelope.pb
+```
 
-# 4️⃣ Leaving org: Clean up credentials and stop containers
-./network-leave-organization.sh org4.testbed.local --hard
-./docker-down.sh docker-compose-org4.yaml
+Finally, `organization4` can remove its public identity from the shared folder and optionally delete its local private credentials.
+
+```bash
+./network-leave-organization.sh --hard
+./docker-down.sh docker-compose-organization4.yaml
 ```
 
 ---
 
-### 📜 Script Reference
+### Script Reference
 
 | Script | Description | Parameters | Example |
 |---------|--------------|-------------|----------|
 | `install-requirements.sh` | Installs Hyperledger Fabric binaries and dependencies. | *(none)* | `./install-requirements.sh` |
-| `network-prep.sh` | Generates the private credentials and create/add the public identity to the shared folder. | `<crypto-config.yaml>` `<docker-compose.yaml>` | `./network-prep.sh crypto-config-org1.yaml docker-compose-org1.yaml` |
+| `network-prepare.sh` | Generates the private credentials and create/add the public identity to the shared folder. | `<organization-config.yaml>` | `./network-prepare.sh organization.yaml` |
 | `network-init.sh` | Creates the genesis block (leader org only). | *(none)* | `./network-init.sh` |
 | `docker-up.sh` | Starts network containers defined in the given compose file. | `<docker-compose.yaml>` | `./docker-up.sh docker-compose-org1.yaml` |
 | `docker-down.sh` | Stops and removes containers for the given organization. If the optional `--hard` flag is provided, it also prunes volumes and removes orphaned containers. | `<docker-compose.yaml>` `[--hard]` | `./docker-down.sh docker-compose-org1.yaml`<br>`./docker-down.sh docker-compose-org1.yaml --hard` |
-| `network-join-orderer.sh` | Joins an orderer organization to the channel. | `<orderer-hostname>` | `./network-join-orderer.sh orderer.ord1.testbed.local` |
-| `network-join-organization.sh` | Joins a peer organization to the channel. | `<org-domain>` | `./network-join-organization.sh org1.testbed.local` |
-| `network-set-anchor-peer.sh` | Sets the anchor peer for the given organization. | `<org-domain>` `<peer-id>` | `./network-set-anchor-peer.sh org1.testbed.local 1` |
+| `network-join-orderer.sh` | Joins an orderer organization to the channel. | *(none)* | `./network-join-orderer.sh` |
+| `network-join-peer.sh` | Joins a peer organization to the channel. | *(none)* | `./network-join-peer.sh` |
+| `network-set-anchor-peer.sh` | Sets the anchor peer for the given organization. | *(none)* | `./network-set-anchor-peer.sh` |
 | `chaincode-package.sh` | Packages the chaincode source into a deployable tarball. | *(none)* | `./chaincode-package.sh` |
-| `chaincode-install.sh` | Installs the packaged chaincode on an organization’s peer(s). | `<org-domain>` | `./chaincode-install.sh org1.testbed.local` |
-| `chaincode-approve.sh` | Approves the chaincode definition for an organization. | `<org-domain>` | `./chaincode-approve.sh org1.testbed.local` |
-| `chaincode-commit.sh` | Commits the chaincode definition to the channel. | `<org-domain>` | `./chaincode-commit.sh org1.testbed.local` |
-| `chaincode-invoke.sh` | Executes a transaction (invoke) on the chaincode. **For testing only.** | `<org-domain>` `<peer-id>` | `./chaincode-invoke.sh org1.testbed.local 1` |
-| `chaincode-query.sh`  | Queries the chaincode state. **For testing only.** | `<org-domain>` `<peer-id>` | `./chaincode-query.sh org1.testbed.local 1` |
-| `network-join-request.sh` | Creates a join request proposal to add a new organization. | `<configtx.yaml>` `<requester-org>` | `./network-join-request.sh configtx-org4.yaml org1.testbed.local` |
-| `network-approve-update.sh` | Approves a pending channel update. | `<proposal-file>` `<org-domain>` | `./network-approve-update.sh org4_update_in_envelope.pb org2.testbed.local` |
-| `network-commit-update.sh` | Commits a channel update after approvals. | `<proposal-file>` `<org-domain>` | `./network-commit-update.sh org4_update_in_envelope.pb org1.testbed.local` |
-| `network-leave-request.sh` | Creates a request to remove an organization from the channel. | `<configtx.yaml>` `<requester-org>` | `./network-leave-request.sh configtx-org4.yaml org1.testbed.local` |
-| `network-leave-organization.sh` | Removes the organization public identity from the shared folder. If the optional `--hard` flag is provided, it also deletes the local private credentials. | `<org-domain>` `[--hard]` | `./network-leave-organization.sh org4.testbed.local --hard` |
+| `chaincode-install.sh` | Installs the packaged chaincode on an organization’s peer(s). | *(none)* | `./chaincode-install.sh` |
+| `chaincode-approve.sh` | Approves the chaincode definition for an organization. | *(none)* | `./chaincode-approve.sh` |
+| `chaincode-commit.sh` | Commits the chaincode definition to the channel. | *(none)* | `./chaincode-commit.sh` |
+| `chaincode-invoke.sh` | Executes a transaction (invoke) on the chaincode. **For testing only.** | *(none)* | `./chaincode-invoke.sh` |
+| `chaincode-query.sh`  | Queries the chaincode state. **For testing only.** | *(none)* | `./chaincode-query.sh` |
+| `network-join-request.sh` | Creates a join request proposal to add a new organization. | `<configtx.yaml>` | `./network-join-request.sh configtx-joining.yaml` |
+| `network-approve-update.sh` | Approves a pending channel update. | `<proposal-file>` | `./network-approve-update.sh joining_update_in_envelope.pb` |
+| `network-commit-update.sh` | Commits a channel update after approvals. | `<proposal-file>` | `./network-commit-update.sh joining_update_in_envelope.pb` |
+| `network-leave-request.sh` | Creates a request to remove an organization from the channel. | `<configtx.yaml>` | `./network-leave-request.sh configtx-joining.yaml` |
+| `network-leave-organization.sh` | Removes the organization public identity from the shared folder. If the optional `--hard` flag is provided, it also deletes the local private credentials. | *(none)* | `./network-leave-organization.sh` |
 
-> [!NOTE]  
-> Identity parameters (i.e. `<org-domain>`, `<orderer-hostname>`) are used to differentiate between the various members in a local development setup. In a production environment, these should be removed, as the scripts should understand the identity from the environment / configuration files (e.g. `network.config`)
+> [!TIP]  
+> Most of the above scripts need a organization-specific configuration to be loaded before execution. This is automatically handled by implicitly sourcing `common.sh`, which interactively allow the selection of the configuration file.
 
 ---
 
-### 🖧 Basic Setup
+### Basic Setup
 
 ```bash
-# Setup a ready-to-use network with 3 organizations and 3 orderers
 ./test-3-orgs.sh
 ```
 
@@ -395,27 +367,24 @@ On this channel, R1, R2 and R3 will join peers, named P1, P2 and P3, to the **ch
 
 In this example, the chaincode `cc-test` has been installed on every peer.
 
-> [!NOTE]  
-> Ordering services don’t have the chaincode installed on them, as ordering nodes don’t propose transactions.
-
 ![](./documentation/assets/architecture.png)
 ---
 
-### 🧿 Security Considerations
+### Security Considerations
 
-- 🔐 **Private keys** are stored locally in the `network/organizations` directory (never shared)
-- 📜 **Public certificates** are shared via the `network/identities` folder (ensure trust)
-- 🔏 **TLS enabled** for all communications
-- ✍️ **Digital signatures** are used for identity verification. For each operation, a challenge is created to test if there is a match between the private credentials and the shared public certificate (useful in local development setups)
-- 🎫 **MSP-based** access control
+- **Private keys** are stored locally under the `network/organizations` directory of each organization
+- **Public certificates** are shared via the `network/identities` folder
+- **TLS enabled** for all communications
+- **Digital signatures** are used for identity verification
+- **MSP-based** access control
 
 ---
 
-### 💡 Troubleshooting
+### Troubleshooting
 
-> #### 1. Docker containers fail to start due to volume related issues
+<details> <summary><b>Docker Volume Permission Issues</b></summary>
 
-In this specific setup, the Docker Compose files assume directories like `/data_hlf1/fabric/...` to exist (as on the university server). 
+In this specific setup, the Docker Compose files assume directories like `/data_hlf1/fabric/...` to exist. 
 
 **Solutions (choose one):**
 
@@ -444,29 +413,37 @@ sudo mkdir -p /data_hlf1/fabric/peer0_org1_data
 sudo chown -R 1000:988 /data_hlf1/fabric/
 ``` 
 
-After applying **either solution**, you can run the network using:
+After applying **either solution**, you can run the basic network using:
 
 ```bash
 ./test-3-orgs.sh
 ```
+</details>
+
+<details> <summary><b>Docker Broken Pipe / Build Errors</b></summary>
+
+The "broken pipe" occurs because the internal library Fabric uses to talk to Docker is incompatible with the way newer Docker Engines (from `v29+`) handle the socket communication during the image build process.
+
+**Solution:** Downgrade your Docker Engine to version `28.5.0` or lower.
+</details>
 
 ---
 
 ## 🧱 Chaincode Module
 
-### 📁 Folder Structure
+### Folder Structure
 
 ```
 chaincode/
-└── 📁 cc-test/                     # Chaincode folder
-    ├── 📁 lib/                     # Business logic and data model definitions
-    │   └── resource-events.js      # Chaincode source code
-    └── index.js                    # Entry point registering the chaincode
+└── 📁 cc-test/                     # Chaincode name
+    ├── 📁 lib/                     # Business logic
+    │   └── resource-events.js      
+    └── index.js
 ```
 
 ---
 
-### 📜 Chaincode Functions
+### Chaincode Functions
 
 | Function | Type | Description |
 |----------|------|-------------|
@@ -477,16 +454,16 @@ chaincode/
 | `ReadAllResources` | Evaluate | Returns all resources |
 | `ResourceExists` | Evaluate | Checks if a resource exists |
 
-### 📑 Resource Schema
+### Resource Schema
 
 ```javascript
 {
-    pid: string,           // Unique identifier
-    uri: string,           // Resource location
-    hash: string,          // Content hash
-    timestamp: string,     // Creation time
-    owners: string[],      // List of owner identifiers
-    status: integer        // Resource status (0: unknown, 1: valid, 2: revoked)
+    pid: string,           
+    uri: string,           
+    hash: string,          
+    timestamp: string,     
+    owners: string[],      
+    status: integer        // 0: unknown, 1: valid, 2: revoked
 }
 ```
 
@@ -494,18 +471,12 @@ chaincode/
 
 ## 🙏 Acknowledgments
 
-A big shoutout to the projects below for their awesome work and open-source contributions:
+This work builds upon the Hyperledger Fabric ecosystem and related open-source contributions.
 
 <div style="display: flex; align-items: left;">
     <a href="https://github.com/hyperledger/fabric">
         <img src="https://avatars.githubusercontent.com/u/7657900?s=200&v=4"
         alt="hyperledger" style="width: 50px; margin-right: 10px">
-    </a>
-    <a href="https://shields.io/">
-        <img src="https://avatars.githubusercontent.com/u/6254238?s=200&v=4" alt="shields.io" style="width: 50px; margin-right: 10px;">
-    </a>
-    <a href="https://simpleicons.org/">
-        <img src="https://avatars.githubusercontent.com/u/29872746?s=200&v=4" alt="simpleicons.org" style="width: 50px; margin-right: 10px;">
     </a>
 </div>
 
