@@ -6,6 +6,7 @@
 
 [![fabric-logo]](https://hyperledger-fabric.readthedocs.io/)
 [![docker-logo]](https://www.docker.com/)
+[![node-logo]](https://nodejs.org/)
 [![shell-logo]](network/scripts/ "Bash scripts for network automation")
 [![javascript-logo]](https://www.javascript.com/)
 [![license-logo]](LICENSE)
@@ -71,8 +72,8 @@ To run this project, ensure that all the following dependencies are installed an
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| 🐳 [Docker](https://www.docker.com/) | 28.5.0 or lower | Container runtime |
-| 🟢 [Node.js](https://nodejs.org/) | v18+ | Chaincode development and execution |
+| 🐳 [Docker Engine](https://www.docker.com/) | v28.5 | Container runtime |
+| 🟢 [Node.js](https://nodejs.org/) | v18+ | Chaincode development |
 
 ### Installation
 
@@ -500,9 +501,10 @@ This work builds upon the Hyperledger Fabric ecosystem and related open-source c
 </div>
 
 <!-- LOGOs -->
-[fabric-logo]: https://img.shields.io/badge/Hyperledger%20Fabric-2.5.13-orange?style=for-the-badge
+[fabric-logo]: https://img.shields.io/badge/Hyperledger%20Fabric-2.5.14-orange?style=for-the-badge
 [shell-logo]: https://img.shields.io/badge/Shell-Bash-4EAA25?style=for-the-badge&logo=gnu-bash
-[docker-logo]: https://img.shields.io/badge/Docker-Latest-2496ED?style=for-the-badge&logo=docker
+[docker-logo]: https://img.shields.io/badge/Docker-v28.5-2496ED?style=for-the-badge&logo=docker
+[node-logo]: https://img.shields.io/badge/Node.js-v18+-339933?style=for-the-badge&logo=node.js&logoColor=white
 [javascript-logo]: https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black
 [license-logo]: https://img.shields.io/badge/License-GPL%20v3-yellow?style=for-the-badge
 
