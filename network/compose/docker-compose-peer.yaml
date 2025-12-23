@@ -1,12 +1,12 @@
 volumes:
-  peer1_data:
+  peer_joining_data:
 
 networks:
   fabric_net:
     name: fabric_net
 
 services:
-  peer1_container:
+  peer_joining_container:
     container_name: ${ORG_HOSTNAME}.${ORG_DOMAIN}
     image: hyperledger/fabric-peer:${FABRIC_VERSION}
     labels:
@@ -31,7 +31,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
       - ../organizations/peerOrganizations/${ORG_DOMAIN}/peers/${ORG_HOSTNAME}.${ORG_DOMAIN}:/etc/hyperledger/fabric
-      - peer1_data:/var/hyperledger
+      - peer_joining_data:/var/hyperledger
     ports:
       - ${ORG_LISTEN_PORT}:7051
       - ${ORG_OPERATIONS_PORT}:9443

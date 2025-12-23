@@ -1,180 +1,18 @@
-Organizations:
-  - &Ord1
-    Name: Ord1
-    ID: Ord1MSP
-    MSPDir: ../identities/ordererOrganizations/ord1.testbed.local/msp
+Organizations:  
+  - &OrgJoining
+    Name: OrgJoining
+    ID: OrgJoiningMSP
+    MSPDir: ../../identities/peerOrganizations/joining.testbed.local/msp
     Policies:
       Readers:
         Type: Signature
-        Rule: "OR('Ord1MSP.member')" #member matches any user of the organization
+        Rule: "OR('OrgJoiningMSP.admin', 'OrgJoiningMSP.peer', 'OrgJoiningMSP.client')"
       Writers:
         Type: Signature
-        Rule: "OR('Ord1MSP.member')"
+        Rule: "OR('OrgJoiningMSP.admin', 'OrgJoiningMSP.client')"
       Admins:
         Type: Signature
-        Rule: "OR('Ord1MSP.admin')"
-    OrdererEndpoints:
-      - orderer.ord1.testbed.local:7051
-  
-  - &Ord2
-    Name: Ord2
-    ID: Ord2MSP
-    MSPDir: ../identities/ordererOrganizations/ord2.testbed.local/msp
-    Policies:
-      Readers:
-        Type: Signature
-        Rule: "OR('Ord2MSP.member')" #member matches any user of the organization
-      Writers:
-        Type: Signature
-        Rule: "OR('Ord2MSP.member')"
-      Admins:
-        Type: Signature
-        Rule: "OR('Ord2MSP.admin')"
-    OrdererEndpoints:
-      - orderer.ord2.testbed.local:7052
-
-  - &Ord3
-    Name: Ord3
-    ID: Ord3MSP
-    MSPDir: ../identities/ordererOrganizations/ord3.testbed.local/msp
-    Policies:
-      Readers:
-        Type: Signature
-        Rule: "OR('Ord3MSP.member')" #member matches any user of the organization
-      Writers:
-        Type: Signature
-        Rule: "OR('Ord3MSP.member')"
-      Admins:
-        Type: Signature
-        Rule: "OR('Ord3MSP.admin')"
-    OrdererEndpoints:
-      - orderer.ord3.testbed.local:7053
-  
-  - &Org1
-    Name: Org1
-    ID: Org1MSP
-    MSPDir: ../identities/peerOrganizations/org1.testbed.local/msp
-    Policies:
-      Readers:
-        Type: Signature
-        Rule: "OR('Org1MSP.admin', 'Org1MSP.peer', 'Org1MSP.client')"
-      Writers:
-        Type: Signature
-        Rule: "OR('Org1MSP.admin', 'Org1MSP.client')"
-      Admins:
-        Type: Signature
-        Rule: "OR('Org1MSP.admin')"
+        Rule: "OR('OrgJoiningMSP.admin')"
       Endorsement:
         Type: Signature
-        Rule: "OR('Org1MSP.peer')"
-    AnchorPeers:
-      - Host: peer0.org1.testbed.local #must be properly assigned through DNS (In docker compose through container name)
-        Port: 7054
-
-Capabilities: #all defined at v2 since we don't need retrocompatibility and want to empoy newest features
-  Channel: &ChannelCapabilities
-    V2_0: true
-
-  Orderer: &OrdererCapabilities
-    V2_0: true
-
-  Application: &ApplicationCapabilities
-    V2_5: true
-
-Application: &ApplicationDefaults
-  Organizations: #This is left balnk sunnce I'm defining a template, once it is used (later in the file), organizations will be defined (and merged with this empty set)
-
-  Policies:
-    Readers:
-      Type: ImplicitMeta
-      Rule: "ANY Readers"
-    Writers:
-      Type: ImplicitMeta
-      Rule: "ANY Writers"
-    Admins:
-      Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
-    LifecycleEndorsement: #Policy that defines the condition necessary for a chaincode to be installed/updated
-      Type: ImplicitMeta
-      Rule: "ALL Endorsement" #Default is MAJORITY
-    Endorsement: #Policy that defines the condition necessary for a transaction to be approved
-      Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
-
-  Capabilities:
-    <<: *ApplicationCapabilities
-
-Orderer: &OrdererDefaults
-  OrdererType: etcdraft
-  
-  Addresses:
-    - orderer.ord1.testbed.local:7051
-    - orderer.ord2.testbed.local:7052
-    - orderer.ord3.testbed.local:7053
-
-  # Batch configuration: settings for batch time and size
-  BatchTimeout: 2s
-  BatchSize:
-    MaxMessageCount: 10
-    AbsoluteMaxBytes: 99 MB
-    PreferredMaxBytes: 512 KB
-
-  Policies:
-    Readers:
-      Type: Signature
-      Rule: "OR('Ord1MSP.member', 'Ord2MSP.member', 'Ord3MSP.member')"  # All members of the OrdererMSPs can read
-    Writers:
-      Type: Signature
-      Rule: "OR('Ord1MSP.member', 'Ord2MSP.member', 'Ord3MSP.member')"  # All members of the OrdererMSPs can write
-    Admins:
-      Type: Signature
-      Rule: "OR('Ord1MSP.admin', 'Ord2MSP.admin', 'Ord3MSP.admin')"  # Only admins of the OrdererMSPs can manage the orderer
-    BlockValidation:
-      Type: ImplicitMeta
-      Rule: "ANY Writers"  # Any writer can validate blocks
-
-# Channel Defaults (for consistency in the channel configuration)
-Channel: &ChannelDefaults
-  Policies:
-    Readers:
-      Type: ImplicitMeta
-      Rule: "ANY Readers"
-    Writers:
-      Type: ImplicitMeta
-      Rule: "ANY Writers"
-    Admins:
-      Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
-  Capabilities:
-    <<: *ChannelCapabilities
-
-Profiles:
-  ChannelUsingRaft:
-    <<: *ChannelDefaults
-    Orderer:
-      <<: *OrdererDefaults
-      EtcdRaft:
-        Consenters:
-          - Host: orderer.ord1.testbed.local
-            Port: 7051 # Must match the container internal port
-            ClientTLSCert: ../identities/ordererOrganizations/ord1.testbed.local/tls/server.crt
-            ServerTLSCert: ../identities/ordererOrganizations/ord1.testbed.local/tls/server.crt
-          - Host: orderer.ord2.testbed.local
-            Port: 7051 # Must match the container internal port
-            ClientTLSCert: ../identities/ordererOrganizations/ord2.testbed.local/tls/server.crt
-            ServerTLSCert: ../identities/ordererOrganizations/ord2.testbed.local/tls/server.crt
-          - Host: orderer.ord3.testbed.local
-            Port: 7051 # Must match the container internal port
-            ClientTLSCert: ../identities/ordererOrganizations/ord3.testbed.local/tls/server.crt
-            ServerTLSCert: ../identities/ordererOrganizations/ord3.testbed.local/tls/server.crt
-      Organizations:
-        - *Ord1
-        - *Ord2
-        - *Ord3
-      Capabilities: *OrdererCapabilities
-    Application:
-      <<: *ApplicationDefaults
-      Organizations:
-        - *Org1
-      Capabilities: *ApplicationCapabilities
-    Consortium: ConsortiumName # Assign a name ?
+        Rule: "OR('OrgJoiningMSP.peer')"

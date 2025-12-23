@@ -1,0 +1,17 @@
+PeerOrgs:
+  - Name: OrgJoining
+    Domain: joining.testbed.local
+    MSPId: OrgJoiningMSP
+    EnableNodeOUs: true
+    Template:
+      Count: 1 # Default, don't change
+      DefaultEndpoint: hlf1.disi.unitn.it
+      SANS:
+        - localhost
+        - hlf1.disi.unitn.it
+      Ports:
+        ListenPort: 5009
+        OperationsPort: 5010
+    DefaultOrdererDomain: hpcilab_ord1.testbed.local
+    Users:
+      Count: 3 # Number of users (excluding admin) per organization
