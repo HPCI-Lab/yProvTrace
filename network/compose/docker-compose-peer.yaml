@@ -12,6 +12,7 @@ networks:
 
 services:
   peer_container:
+    user: 1000:988
     container_name: ${ORG_HOSTNAME}.${ORG_DOMAIN}
     image: hyperledger/fabric-peer:${FABRIC_VERSION}
     labels:

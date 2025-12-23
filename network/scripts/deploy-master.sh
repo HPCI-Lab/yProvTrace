@@ -36,7 +36,7 @@ sudo -u gsuser rm -rf /data_hlf1/fabric/orderer_hpcilab_ord2_data
 sudo -u gsuser rm -rf /data_hlf1/fabric/orderer_hpcilab_ord3_data
 sudo -u gsuser rm -rf /data_hlf1/fabric/peer_${ORG_DOMAIN}_data
 
-sudo rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
+rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
 mkdir -p ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
 
 # ----------------------------------------------------------------------------
@@ -112,13 +112,13 @@ sleep 5
 # PHASE 5 (Test only): Final Teardown
 # ----------------------------------------------------------------------------
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" --hard
+#ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
+#    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" --hard
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" --hard
+#ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
+#    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" --hard
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
+#ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
+#    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
 
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer.yaml" --hard
+#    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer.yaml" --hard

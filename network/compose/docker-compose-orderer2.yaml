@@ -12,6 +12,7 @@ networks:
 
 services:
   orderer2_container:
+    user: 1000:988
     container_name: ${ORG_HOSTNAME}.${ORG_DOMAIN}
     image: hyperledger/fabric-orderer:${FABRIC_VERSION}
     labels:

@@ -1,6 +1,6 @@
 PeerOrgs:
   - Name: HPCIlab
-    Domain: org1.testbed.local
+    Domain: hpcilab.testbed.local
     MSPId: HPCIlabMSP
     EnableNodeOUs: true
     Template:
@@ -11,7 +11,7 @@ PeerOrgs:
         - hlf1.disi.unitn.it
       Ports:
         ListenPort: 6001
-        OperationsPort: 6002
+        OperationsPort: 6003
     DefaultOrdererDomain: hpcilab_ord1.testbed.local
     Users:
       Count: 1 # Number of users (excluding admin) per organization
