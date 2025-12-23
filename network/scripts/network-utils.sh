@@ -139,9 +139,9 @@ generate_definition() {
     local org_name=$(yq -r '.Organizations[0].Name' ${configtx_file})
     local org_msp_id=$(yq -r '.Organizations[0].ID' ${configtx_file})
     local target_dir=$(yq -r '.Organizations[0].MSPDir' ${configtx_file})
-    local definition_file="$(dirname ${target_dir#../})/${org_name,,}.json"
+    local definition_file="$(dirname "$(realpath "$target_dir")")/${org_name,,}.json"
 
-    configtxgen -configPath $(dirname ${configtx_file}) -printOrg ${org_name} > ${definition_file}
+    configtxgen -configPath "$(dirname "$(realpath "$configtx_file")")" -printOrg ${org_name} > ${definition_file}
 
     if [ $? -ne 0 ]; then
         log_error "Failed to generate organization definition for '${org_name}'."
