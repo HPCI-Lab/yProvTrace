@@ -1,21 +1,29 @@
 #!/bin/bash
 
-. cc-utils.sh
+# ============================================================================
+# yProvTrace: Chaincode Commit Script
+# ============================================================================
+# Description:
+#   Commits the chaincode definition to the channel after sufficient
+#   organizations have approved it. This finalizes the chaincode deployment
+#   and makes it available for invocation by all channel members.
+#
+# Requirements:
+#   - Organization identity must be valid
+#   - Majority of organizations must have approved
+#   - ORG_CONFIG_FILE must be set
+#
+# Steps:
+#   1. Verify organization identity
+#   2. Resolve chaincode sequence number
+#   3. Check commit readiness across organizations
+#   4. Commit chaincode definition to channel
+# ============================================================================
 
-ORG_DOMAIN=$1
-
-# Check if the organization domain is provided
-if [ -z "$ORG_DOMAIN" ]; then
-    echo "Usage: $0 <org_domain>"
-    exit 1
-fi
+source cc-utils.sh
 
 # Verify the identity of the caller
-verify_identity ${ORG_DOMAIN}
-
-# Set the default orderer and peer
-set_orderer ${DEFAULT_ORD}
-set_peer ${ORG_DOMAIN} ${DEFAULT_PEER_ID}
+verify_identity
 
 # Resolve the sequence number for the chaincode
 resolveSequence

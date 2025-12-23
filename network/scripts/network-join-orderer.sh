@@ -1,19 +1,36 @@
 #!/bin/bash
 
-. ids-utils.sh
-. network-utils.sh
+# ============================================================================
+# yProvTrace: Orderer Channel Join Script
+# ============================================================================
+# Description:
+#   Joins an orderer node to the application channel using the osnadmin
+#   channel management API. This makes the orderer part of the consensus
+#   cluster for the channel.
+#
+# Requirements:
+#   - Orderer container must be running
+#   - Genesis block must exist (created by network-init.sh)
+#   - Organization identity must be valid
+#   - ORG_CONFIG_FILE must point to an orderer organization
+#
+# Process:
+#   1. Verify organization identity (admin credentials)
+#   2. Join orderer to channel using genesis block
+#
+# Uses:
+#   osnadmin CLI with TLS client certificates for authentication
+#
+# Exit Codes:
+#   1 - Identity verification or join operation failed
+# ============================================================================
 
-ORD_HOSTNAME=$1
-
-# Check if orderer hostname is provided
-if [ -z "$ORD_HOSTNAME" ]; then
-    echo "Usage: $0 <orderer_hostname>"
-    exit 1
-fi
+source ids-utils.sh
+source network-utils.sh
 
 # Verify the identity of the caller
-ORD_DOMAIN=$(echo "$ORD_HOSTNAME" | cut -d'.' -f2-)
-verify_identity "$ORD_DOMAIN"
+verify_identity 
 
+# Join the orderer to the channel using the genesis block
 # Join the orderer to the network
-join_orderer ${ORD_HOSTNAME}
+join_orderer

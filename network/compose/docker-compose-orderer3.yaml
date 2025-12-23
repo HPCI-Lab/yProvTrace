@@ -1,0 +1,32 @@
+volumes:
+  orderer3_data:
+
+networks:
+  fabric_net:
+    name: fabric_net
+
+services:
+  orderer3_container:
+    container_name: ${ORG_HOSTNAME}.${ORG_DOMAIN}
+    image: hyperledger/fabric-orderer:${FABRIC_VERSION}
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LOCALMSPID=${ORG_MSP_ID}
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7051
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
+      - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:9443
+    working_dir: /root
+    command: orderer
+    volumes:
+      - ../config/fabric/orderer.yaml:/etc/hyperledger/fabric/orderer.yaml
+      - ../organizations/ordererOrganizations/${ORG_DOMAIN}/orderers/${ORG_HOSTNAME}.${ORG_DOMAIN}/:/etc/hyperledger/fabric
+      - orderer3_data:/var/hyperledger
+    ports:
+      - ${ORG_LISTEN_PORT}:7051
+      - ${ORG_ADMIN_PORT}:7053
+      - ${ORG_OPERATIONS_PORT}:9443
+    networks:
+      - fabric_net

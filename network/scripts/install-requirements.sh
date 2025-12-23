@@ -1,22 +1,66 @@
 #!/bin/bash
 
-. ../network.config
+# ============================================================================
+# yProvTrace: Requirements Installation Script
+# ============================================================================
+# Description:
+#   Installs and configures all dependencies required for running the
+#   yProvTrace network, including Hyperledger Fabric binaries and system
+#   utilities.
+#
+# Installed Components:
+#   1. Hyperledger Fabric binaries (peer, orderer, configtxgen, etc.)
+#   2. System utilities (jq, yq, fzf)
+#   3. Chaincode runtime validation (Node.js for JavaScript)
+#
+# Requirements:
+#   - Docker must be installed
+#   - Internet connection for downloads
+#   - sudo privileges for apt package installation
+#
+# Fabric Binaries:
+#   Downloaded from GitHub releases based on FABRIC_VERSION
+#   Installed to: NETWORK_BIN_PATH (../bin)
+#
+# Note: ORG_CONFIG_FILE set to "NONE" to skip org selection
+# ============================================================================
 
+export ORG_CONFIG_FILE="NONE"
+
+source common.sh
+
+# ----------------------------------------------------------------------------
+# Download Helper Function
+# ----------------------------------------------------------------------------
+# Description: Downloads and extracts Fabric binaries from GitHub
+# Parameters:
+#   $1 - Binary file name (unused, kept for compatibility)
+#   $2 - Download URL
+# Returns: 22 if download fails
+# ----------------------------------------------------------------------------
 download() {
     local BINARY_FILE=$1
     local URL=$2
-    echo "===> Downloading: " "${URL}"
+    log_info "===> Downloading: " "${URL}"
     curl -L --retry 5 --retry-delay 3 "${URL}" | tar xz -C "../" bin  || rc=$?
     if [ -n "$rc" ]; then
-        echo "==> There was an error downloading the binary file."
+        log_error "==> There was an error downloading the binary file."
         return 22
     else
-        echo "==> Done."
+        log_info "==> Done."
     fi
 }
 
+# ----------------------------------------------------------------------------
+# Pull Fabric Binaries
+# ----------------------------------------------------------------------------
+# Description: Downloads platform-specific Fabric binaries
+# Purpose: Retrieves peer, orderer, configtxgen, cryptogen, etc.
+# Version: Uses FABRIC_VERSION from network configuration
+# Exit: If binaries unavailable for the specified version
+# ----------------------------------------------------------------------------
 pull_binaries() {
-    echo "===> Downloading version ${FABRIC_VERSION} platform specific fabric binaries"
+    log_info "===> Downloading version ${FABRIC_VERSION} platform specific fabric binaries"
     download "${BINARY_FILE}" "https://github.com/hyperledger/fabric/releases/download/v${FABRIC_VERSION}/${BINARY_FILE}"
     if [ $? -eq 22 ]; then
         echo
@@ -26,45 +70,43 @@ pull_binaries() {
     fi
 }
 
-# Check if docker is installed
+# ----------------------------------------------------------------------------
+# Validation: Docker Installation
+# ----------------------------------------------------------------------------
 if ! command -v docker &> /dev/null; then
-    # TODO: should we install docker here for the user?
-    echo "Docker is not installed. Please install Docker to run the network."
+    log_error "Docker is not installed. Please install Docker to proceed."
     exit 1
-else
-    echo "Docker is installed at: $(which docker)"
 fi
 
-# Check CC_SRC_LANG and tell user to install the required language runtime
-# TODO: should we install the runtime language here for the user?
-if [ "$CC_SRC_LANG" = "go" ]; then
-    if ! command -v go &> /dev/null; then
-        echo "CC_SRC_LANG is set to Go, but Go is not installed. Please install Go to run the chaincode."
-        exit 1
-    else
-        echo "CC_SRC_LANG is set to Go. Go is installed at: $(which go)"
-    fi
-elif [ "$CC_SRC_LANG" = "javascript" ] || [ "$CC_SRC_LANG" = "typescript" ]; then
+# ----------------------------------------------------------------------------
+# Validation: Chaincode Runtime
+# ----------------------------------------------------------------------------
+if [ "$CHAINCODE_LANGUAGE" = "javascript" ] || [ "$CHAINCODE_LANGUAGE" = "typescript" ]; then
     if ! command -v node &> /dev/null; then
-        echo "CC_SRC_LANG is set to JavaScript/TypeScript, but Node.js is not installed. Please install Node.js to run the chaincode."
+        log_error "CHAINCODE_LANGUAGE is set to JavaScript/TypeScript, but Node.js is not installed. Please install Node.js to run the chaincode."
         exit 1
-    else
-        echo "CC_SRC_LANG is set to JavaScript/TypeScript. Node.js is installed at: $(which node)"
     fi
+else
+    log_error "Unsupported CHAINCODE_LANGUAGE: ${CHAINCODE_LANGUAGE}. Currently, only 'javascript' and 'typescript' are supported."
+    exit 1  
 fi
 
-# Update and install required packages
+# ----------------------------------------------------------------------------
+# Install System Utilities
+# ----------------------------------------------------------------------------
 sudo apt-get update
-sudo apt-get install -y jq yq
+sudo apt-get install -y jq yq fzf
 
-# Install the Hyperledger Fabric binaries if they are not already installed
+# ----------------------------------------------------------------------------
+# Install Hyperledger Fabric Binaries
+# ----------------------------------------------------------------------------
 if [ ! -d "${NETWORK_BIN_PATH}" ]; then
-    echo "Hyperledger Fabric binaries not found. Installing requirements..."
+    log_info "Hyperledger Fabric binaries not found. Installing requirements..."
     OS=$(uname -s|tr '[:upper:]' '[:lower:]'|sed 's/mingw64_nt.*/windows/')
     ARCH=$(uname -m | sed 's/x86_64/amd64/g' | sed 's/aarch64/arm64/g')
     PLATFORM=${OS}-${ARCH}
     BINARY_FILE=hyperledger-fabric-${PLATFORM}-${FABRIC_VERSION}.tar.gz
     pull_binaries
 else
-    echo "Hyperledger Fabric binaries found at: ${NETWORK_BIN_PATH}. Skipping installation."
+    log_info "Hyperledger Fabric binaries found at: ${NETWORK_BIN_PATH}. Skipping installation."
 fi

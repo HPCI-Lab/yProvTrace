@@ -14,7 +14,7 @@ Organizations:
         Type: Signature
         Rule: "OR('Ord1MSP.admin')"
     OrdererEndpoints:
-      - hlf1.disi.unitn.it:5001
+      - orderer.ord1.testbed.local:7051
   
   - &Ord2
     Name: Ord2
@@ -31,7 +31,7 @@ Organizations:
         Type: Signature
         Rule: "OR('Ord2MSP.admin')"
     OrdererEndpoints:
-      - hlf1.disi.unitn.it:5004
+      - orderer.ord2.testbed.local:7052
 
   - &Ord3
     Name: Ord3
@@ -48,7 +48,7 @@ Organizations:
         Type: Signature
         Rule: "OR('Ord3MSP.admin')"
     OrdererEndpoints:
-      - hlf1.disi.unitn.it:5007
+      - orderer.ord3.testbed.local:7053
   
   - &Org1
     Name: Org1
@@ -68,50 +68,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org1MSP.peer')"
     AnchorPeers:
-      - Host: hlf1.disi.unitn.it #must be properly assigned through DNS (In docker compose through container name)
-        Port: 6001
-  
-  - &Org2
-    Name: Org2
-    ID: Org2MSP
-    MSPDir: ../identities/peerOrganizations/org2.testbed.local/msp
-    Policies:
-      Readers:
-        Type: Signature
-        Rule: "OR('Org2MSP.admin', 'Org2MSP.peer', 'Org2MSP.client')"
-      Writers:
-        Type: Signature
-        Rule: "OR('Org2MSP.admin', 'Org2MSP.client')"
-      Admins:
-        Type: Signature
-        Rule: "OR('Org2MSP.admin')"
-      Endorsement:
-        Type: Signature
-        Rule: "OR('Org2MSP.peer')"
-    AnchorPeers:
-      - Host: hlf1.disi.unitn.it #must be properly assigned through DNS (In docker compose through container name)
-        Port: 6004
-  
-  - &Org3
-    Name: Org3
-    ID: Org3MSP
-    MSPDir: ../identities/peerOrganizations/org3.testbed.local/msp
-    Policies:
-      Readers:
-        Type: Signature
-        Rule: "OR('Org3MSP.admin', 'Org3MSP.peer', 'Org3MSP.client')"
-      Writers:
-        Type: Signature
-        Rule: "OR('Org3MSP.admin', 'Org3MSP.client')"
-      Admins:
-        Type: Signature
-        Rule: "OR('Org3MSP.admin')"
-      Endorsement:
-        Type: Signature
-        Rule: "OR('Org3MSP.peer')"
-    AnchorPeers:
-      - Host: hlf1.disi.unitn.it #must be properly assigned through DNS (In docker compose through container name)
-        Port: 6007
+      - Host: peer0.org1.testbed.local #must be properly assigned through DNS (In docker compose through container name)
+        Port: 7054
 
 Capabilities: #all defined at v2 since we don't need retrocompatibility and want to empoy newest features
   Channel: &ChannelCapabilities
@@ -138,7 +96,7 @@ Application: &ApplicationDefaults
       Rule: "MAJORITY Admins"
     LifecycleEndorsement: #Policy that defines the condition necessary for a chaincode to be installed/updated
       Type: ImplicitMeta
-      Rule: "ALL Endorsement" #Default is MAJORITY, changed to ALL to enforce stricter control over chaincode lifecycle
+      Rule: "ALL Endorsement" #Default is MAJORITY
     Endorsement: #Policy that defines the condition necessary for a transaction to be approved
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
@@ -150,9 +108,9 @@ Orderer: &OrdererDefaults
   OrdererType: etcdraft
   
   Addresses:
-    - hlf1.disi.unitn.it:5001
-    - hlf1.disi.unitn.it:5004
-    - hlf1.disi.unitn.it:5007
+    - orderer.ord1.testbed.local:7051
+    - orderer.ord2.testbed.local:7052
+    - orderer.ord3.testbed.local:7053
 
   # Batch configuration: settings for batch time and size
   BatchTimeout: 2s
@@ -164,18 +122,16 @@ Orderer: &OrdererDefaults
   Policies:
     Readers:
       Type: Signature
-      Rule: "OR('Ord1MSP.member', 'Ord2MSP.member')"  # All members of the OrdererMSPs can read
+      Rule: "OR('Ord1MSP.member', 'Ord2MSP.member', 'Ord3MSP.member')"  # All members of the OrdererMSPs can read
     Writers:
       Type: Signature
-      Rule: "OR('Ord1MSP.member', 'Ord2MSP.member')"  # All members of the OrdererMSPs can write
+      Rule: "OR('Ord1MSP.member', 'Ord2MSP.member', 'Ord3MSP.member')"  # All members of the OrdererMSPs can write
     Admins:
       Type: Signature
-      Rule: "OR('Ord1MSP.admin', 'Ord2MSP.admin')"  # Only admins of the OrdererMSPs can manage the orderer
+      Rule: "OR('Ord1MSP.admin', 'Ord2MSP.admin', 'Ord3MSP.admin')"  # Only admins of the OrdererMSPs can manage the orderer
     BlockValidation:
       Type: ImplicitMeta
       Rule: "ANY Writers"  # Any writer can validate blocks
-
-  
 
 # Channel Defaults (for consistency in the channel configuration)
 Channel: &ChannelDefaults
@@ -199,16 +155,16 @@ Profiles:
       <<: *OrdererDefaults
       EtcdRaft:
         Consenters:
-          - Host: hlf1.disi.unitn.it
-            Port: 5001
+          - Host: orderer.ord1.testbed.local
+            Port: 7051 # Must match the container internal port
             ClientTLSCert: ../identities/ordererOrganizations/ord1.testbed.local/tls/server.crt
             ServerTLSCert: ../identities/ordererOrganizations/ord1.testbed.local/tls/server.crt
-          - Host: hlf1.disi.unitn.it
-            Port: 5004
+          - Host: orderer.ord2.testbed.local
+            Port: 7051 # Must match the container internal port
             ClientTLSCert: ../identities/ordererOrganizations/ord2.testbed.local/tls/server.crt
             ServerTLSCert: ../identities/ordererOrganizations/ord2.testbed.local/tls/server.crt
-          - Host: hlf1.disi.unitn.it
-            Port: 5007
+          - Host: orderer.ord3.testbed.local
+            Port: 7051 # Must match the container internal port
             ClientTLSCert: ../identities/ordererOrganizations/ord3.testbed.local/tls/server.crt
             ServerTLSCert: ../identities/ordererOrganizations/ord3.testbed.local/tls/server.crt
       Organizations:
@@ -220,7 +176,5 @@ Profiles:
       <<: *ApplicationDefaults
       Organizations:
         - *Org1
-        - *Org2
-        - *Org3
       Capabilities: *ApplicationCapabilities
-    Consortium: UnitnInternal
+    Consortium: ConsortiumName # Assign a name ?

@@ -1,33 +1,32 @@
 #!/bin/bash
 
-. ids-utils.sh
-. cc-utils.sh
+# ============================================================================
+# yProvTrace: Chaincode Approval Script
+# ============================================================================
+# Description:
+#   Approves a chaincode definition for the current organization. Each
+#   organization in the channel must approve the chaincode before it can
+#   be committed to the channel.
+#
+# Requirements:
+#   - Organization identity must be valid
+#   - Chaincode must be installed on at least one peer
+#   - ORG_CONFIG_FILE must be set
+#
+# Steps:
+#   1. Verify organization identity
+#   2. Resolve chaincode sequence number
+#   3. Approve chaincode definition
+# ============================================================================
 
-ORG_DOMAIN=$1
-
-# Check if the organization domain is provided
-if [ -z "$ORG_DOMAIN" ]; then
-    echo "Usage: $0 <org-domain>"
-    exit 1
-fi
+source ids-utils.sh
+source cc-utils.sh
 
 # Verify the identity of the caller
-verify_identity "$ORG_DOMAIN"
-
-# Set the default orderer and peer
-set_orderer ${DEFAULT_ORD}                
-set_peer ${ORG_DOMAIN} ${DEFAULT_PEER_ID}
-
-# Calculate the package ID for the chaincode (INFO only)
-PACKAGE_ID=$(calculate_package_id)
-
-if [ -z "$PACKAGE_ID" ]; then
-    echo "Failed to calculate package ID."
-    exit 1
-fi
+verify_identity 
 
 # Resolve the sequence number for the chaincode
 resolveSequence
 
 # Approve the chaincode for the organization
-approve_chaincode ${PACKAGE_ID} 
+approve_chaincode

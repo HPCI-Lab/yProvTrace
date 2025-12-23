@@ -1,0 +1,25 @@
+network:
+  name: "yprovtrace-network"
+  channel: "mychannel"
+  chaincode:
+    name: "cc-test"
+    language: "javascript"
+    version: "1.0"
+
+docker:
+  project: "testbed"
+
+fabric:
+  version: "2.5.14"
+
+paths:
+  bin: /bin
+  channel: /channel
+  compose: /compose
+  config: /config
+  configtx: /configtx
+  crypto: /crypto
+  identities: /identities
+  organizations: /organizations
+  packages: /packages
+  templates: /templates

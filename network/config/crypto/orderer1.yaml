@@ -1,0 +1,14 @@
+OrdererOrgs:
+  - Name: Ord1
+    Domain: ord1.testbed.local
+    MSPId: Ord1MSP
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        DefaultEndpoint: localhost
+        SANS:
+          - localhost
+        Ports:
+          ListenPort: 7051
+          AdminPort: 8051
+          OperationsPort: 9051
