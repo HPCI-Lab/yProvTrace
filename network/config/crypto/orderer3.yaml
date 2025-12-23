@@ -1,14 +1,15 @@
 OrdererOrgs:
-  - Name: Ord3
-    Domain: ord3.testbed.local
-    MSPId: Ord3MSP
+  - Name: HPCIlabOrd3
+    Domain: hpcilab_ord3.testbed.local
+    MSPId: HPCIlabOrd3MSP
     EnableNodeOUs: true
     Specs:
       - Hostname: orderer
-        DefaultEndpoint: localhost
+        DefaultEndpoint: hlf1.disi.unitn.it
         SANS:
           - localhost
+          - hlf1.disi.unitn.it
         Ports:
-          ListenPort: 7053
-          AdminPort: 8053
-          OperationsPort: 9053
+          ListenPort: 5007
+          AdminPort: 5009
+          OperationsPort: 5008

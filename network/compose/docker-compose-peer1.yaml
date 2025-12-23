@@ -1,5 +1,10 @@
 volumes:
   peer1_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data_hlf1/fabric/peer1_${ORG_DOMAIN}_data
 
 networks:
   fabric_net:

@@ -1,16 +1,17 @@
 PeerOrgs:
-  - Name: Org1
+  - Name: HPCIlab
     Domain: org1.testbed.local
-    MSPId: Org1MSP
+    MSPId: HPCIlabMSP
     EnableNodeOUs: true
     Template:
       Count: 1 # Default, don't change
-      DefaultEndpoint: localhost
+      DefaultEndpoint: hlf1.disi.unitn.it
       SANS:
         - localhost
+        - hlf1.disi.unitn.it
       Ports:
-        ListenPort: 7054
-        OperationsPort: 9054
-    DefaultOrdererDomain: ord1.testbed.local
+        ListenPort: 6001
+        OperationsPort: 6002
+    DefaultOrdererDomain: hpcilab_ord1.testbed.local
     Users:
-      Count: 3 # Number of users (excluding admin) per organization
+      Count: 1 # Number of users (excluding admin) per organization

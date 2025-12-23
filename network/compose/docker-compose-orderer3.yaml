@@ -1,5 +1,10 @@
 volumes:
   orderer3_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data_hlf1/fabric/orderer_hpcilab_ord3_data
 
 networks:
   fabric_net:
