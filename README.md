@@ -309,7 +309,7 @@ In the following example, the network described in [Example of Runtime Joining](
 
 ```bash
 # 1️⃣ Create leave request
-./network-leave-request.sh organization4.yaml
+./network-leave-request.sh configtx-organization4.yaml
 
 # 2️⃣ Approve the request (majority required)
 ./network-approve-update.sh org4_update_in_envelope.pb
