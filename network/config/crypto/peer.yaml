@@ -10,8 +10,8 @@ PeerOrgs:
         - localhost
         - hlf1.disi.unitn.it
       Ports:
-        ListenPort: 5009
-        OperationsPort: 5010
+        ListenPort: 6004
+        OperationsPort: 6006
     DefaultOrdererDomain: hpcilab_ord1.testbed.local
     Users:
       Count: 3 # Number of users (excluding admin) per organization

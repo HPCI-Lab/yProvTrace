@@ -2,7 +2,7 @@ Organizations:
   - &OrgJoining
     Name: OrgJoining
     ID: OrgJoiningMSP
-    MSPDir: ../../identities/peerOrganizations/joining.testbed.local/msp
+    MSPDir: ../identities/peerOrganizations/joining.testbed.local/msp
     Policies:
       Readers:
         Type: Signature
