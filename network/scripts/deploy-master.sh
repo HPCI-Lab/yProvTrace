@@ -27,14 +27,14 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
     ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
 
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer1.yaml" --hard
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer.yaml" --hard
 
 # Wipe existing ledger data, channel artifacts, and identity certificates
 
 sudo -u gsuser rm -rf /data_hlf1/fabric/orderer_hpcilab_ord1_data
 sudo -u gsuser rm -rf /data_hlf1/fabric/orderer_hpcilab_ord2_data
 sudo -u gsuser rm -rf /data_hlf1/fabric/orderer_hpcilab_ord3_data
-sudo -u gsuser rm -rf /data_hlf1/fabric/peer0_${ORG_DOMAIN}_data
+sudo -u gsuser rm -rf /data_hlf1/fabric/peer_${ORG_DOMAIN}_data
 
 sudo rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
 mkdir -p ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
@@ -53,7 +53,7 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
     ./network-prepare.sh "${NETWORK_CRP_PATH}/orderer3.yaml"
 
-./network-prepare.sh "${NETWORK_CRP_PATH}/peer1.yaml"
+./network-prepare.sh "${NETWORK_CRP_PATH}/peer.yaml"
 
 # Ensure read permissions for all generated crypto material
 chmod -R +r ../organizations/ordererOrganizations
@@ -65,7 +65,7 @@ chmod -R +r ../organizations/peerOrganizations
 sudo -u gsuser mkdir /data_hlf1/fabric/orderer_hpcilab_ord1_data
 sudo -u gsuser mkdir /data_hlf1/fabric/orderer_hpcilab_ord2_data
 sudo -u gsuser mkdir /data_hlf1/fabric/orderer_hpcilab_ord3_data
-sudo -u gsuser mkdir /data_hlf1/fabric/peer1_${ORG_DOMAIN}_data
+sudo -u gsuser mkdir /data_hlf1/fabric/peer_${ORG_DOMAIN}_data
 
 # ----------------------------------------------------------------------------
 # PHASE 3: Network Startup & Channel Joining
@@ -81,7 +81,7 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
     ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" # Start the orderer 3
 
-./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-peer1.yaml" # Start the organization 1
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-peer.yaml" # Start the organization 1
 
 # All orderers join the channel
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
@@ -99,8 +99,8 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
 # ----------------------------------------------------------------------------
 # PHASE 4: Chaincode Deployment (Initial)
 # ----------------------------------------------------------------------------
-./chaincode-install.sh # Install the chaincode on peer1
-./chaincode-approve.sh # Approve the chaincode for peer1
+./chaincode-install.sh # Install the chaincode on peer
+./chaincode-approve.sh # Approve the chaincode for peer
 ./chaincode-commit.sh # Commit the chaincode definition
 
 # Sanity check: Invoke a transaction and query the state
@@ -121,4 +121,4 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
     ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
 
-./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer1.yaml" --hard
+./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer.yaml" --hard
