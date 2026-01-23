@@ -72,7 +72,7 @@ To run this project, ensure that all the following dependencies are installed an
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| 🐳 [Docker Engine](https://www.docker.com/) | v28.5 | Container runtime |
+| 🐳 [Docker Engine](https://www.docker.com/) | v28.5 or lower | Container runtime |
 | 🟢 [Node.js](https://nodejs.org/) | v18+ | Chaincode development |
 
 ### Installation
