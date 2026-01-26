@@ -25,6 +25,15 @@
 # Note: ORG_CONFIG_FILE set to "NONE" to skip org selection
 # ============================================================================
 
+# ----------------------------------------------------------------------------
+# Install System Utilities
+# ----------------------------------------------------------------------------
+sudo apt-get update
+sudo apt-get install -y jq yq fzf
+
+# ----------------------------------------------------------------------------
+# Set ORG_CONFIG_FILE to "NONE" and Source Common Script
+# ----------------------------------------------------------------------------
 export ORG_CONFIG_FILE="NONE"
 
 source common.sh
@@ -90,12 +99,6 @@ else
     log_error "Unsupported CHAINCODE_LANGUAGE: ${CHAINCODE_LANGUAGE}. Currently, only 'javascript' and 'typescript' are supported."
     exit 1  
 fi
-
-# ----------------------------------------------------------------------------
-# Install System Utilities
-# ----------------------------------------------------------------------------
-sudo apt-get update
-sudo apt-get install -y jq yq fzf
 
 # ----------------------------------------------------------------------------
 # Install Hyperledger Fabric Binaries
