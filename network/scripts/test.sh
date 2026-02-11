@@ -12,6 +12,8 @@
 #   5. Dynamically removes 'peer2' and cleans up the environment.
 # ============================================================================
 
+export ORG_CONFIG_FILE="NONE"
+
 source common.sh
 
 # ----------------------------------------------------------------------------
