@@ -1,133 +1,135 @@
 #!/bin/bash
 
-# ============================================================================
-# yProvTrace: 3-Organization Production-Style Setup
-# ============================================================================
-# Description:
-#   1. Bootstraps a base network (1 Peer Org, 3 Orderers).
-#   2. Dynamically adds 'peer2' to the channel.
-#   3. Dynamically adds 'peer3' to the channel.
-#   4. Finalizes chaincode endorsement across all 3 organizations.
-#   Note: Network remains UP at the end of execution.
-# ============================================================================
+# Complete example:
+#   - three independent ordering organizations
+#   - three peer organizations added incrementally to the channel
+#   - exactly one Fabric network admin per organization
+#   - no pre-created application users
+#   - chaincode installed and approved by all peer organizations
+#
+# The network and all six Fabric CAs remain running when the script completes.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${SCRIPT_DIR}"
 
 export ORG_CONFIG_FILE="NONE"
-
 source common.sh
 
-# ----------------------------------------------------------------------------
-# PHASE 1: Environment Cleanup & Pre-flight Checks
-# ----------------------------------------------------------------------------
+# Development default. Set this explicitly before running outside a local test.
+export ORG_CA_ADMIN_PASSWORD="${ORG_CA_ADMIN_PASSWORD:-test-ca-admin-password}"
 
-# Ensure any existing containers and volumes are purged before starting
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer1.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer1.yaml" --hard
+ORDERER_ORGS=(orderer1 orderer2 orderer3)
+PEER_ORGS=(peer1 peer2 peer3)
+ALL_ORGS=("${ORDERER_ORGS[@]}" "${PEER_ORGS[@]}")
 
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer2.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer2.yaml" --hard
-
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer3.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-orderer3.yaml" --hard
-
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer1.yaml" --hard
-
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer2.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer2.yaml" --hard
-
-ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer3.yaml" \
-    ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer3.yaml" --hard
-
-sudo rm -rf "${NETWORK_ORG_PATH}" "${NETWORK_IDS_PATH}" "${NETWORK_CHN_PATH}"
-mkdir -p "${NETWORK_ORG_PATH}" "${NETWORK_IDS_PATH}" "${NETWORK_CHN_PATH}"
-
-# ----------------------------------------------------------------------------
-# PHASE 2: Core Infrastructure (Peer1 + Orderers)
-# ----------------------------------------------------------------------------
-
-# Generate crypto material for base members
-for org in orderer1 orderer2 orderer3 peer1; do
-    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${org}.yaml" ./network-prepare.sh "${NETWORK_CRP_PATH}/${org}.yaml"
+log_info "Cleaning previous 3-organization test network"
+for organization in "${ALL_ORGS[@]}"; do
+    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${organization}.yaml" \
+        ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-${organization}.yaml" --hard || true
+    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${organization}.yaml" \
+        ./ca-down.sh || true
 done
 
-./network-init.sh # Generate genesis block
+# Generated identity and CA state can be owned by container users.
+sudo rm -rf \
+    "${NETWORK_ORG_PATH}" \
+    "${NETWORK_IDS_PATH}" \
+    "${NETWORK_CHN_PATH}" \
+    "${NETWORK_CA_PATH}" \
+    "${NETWORK_PKG_PATH}"
+mkdir -p \
+    "${NETWORK_ORG_PATH}" \
+    "${NETWORK_IDS_PATH}" \
+    "${NETWORK_CHN_PATH}" \
+    "${NETWORK_PKG_PATH}"
 
-# Start containers
-for org in orderer1 orderer2 orderer3 peer1; do
-    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${org}.yaml" ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-${org}.yaml"
+log_info "Preparing the three orderers and founding peer organization with Fabric CA"
+for organization in "${ORDERER_ORGS[@]}" peer1; do
+    ./network-prepare.sh "${NETWORK_CRP_PATH}/${organization}.yaml"
 done
 
-# Join channel
-for i in 1 2 3; do
-    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/orderer${i}.yaml" ./network-join-orderer.sh
+log_info "Generating the initial channel block"
+export ORG_CONFIG_FILE="NONE"
+./network-init.sh
+
+log_info "Starting and joining the three orderers"
+for organization in "${ORDERER_ORGS[@]}"; do
+    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${organization}.yaml" \
+        ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-${organization}.yaml"
+done
+for organization in "${ORDERER_ORGS[@]}"; do
+    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${organization}.yaml" \
+        ./network-join-orderer.sh
 done
 
+log_info "Starting Org1 as the founding application organization"
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-peer1.yaml"
 ./network-join-peer.sh
 
-# Initial Chaincode Deployment
+log_info "Packaging and deploying chaincode on Org1"
+./chaincode-package.sh
 ./chaincode-install.sh
 ./chaincode-approve.sh
 ./chaincode-commit.sh
 
-# ----------------------------------------------------------------------------
-# PHASE 3: Onboard Organization 2
-# ----------------------------------------------------------------------------
-
+log_info "Adding Org2 through a channel configuration update"
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer2.yaml"
-./network-prepare.sh "${NETWORK_CRP_PATH}/peer2.yaml" #
-./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-peer2.yaml" #
+./network-prepare.sh "${NETWORK_CRP_PATH}/peer2.yaml"
+./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-peer2.yaml"
 
-# Peer1 handles the join request
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
 ./network-join-request.sh "${NETWORK_CTX_PATH}/org2/configtx.yaml"
 ./network-approve-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
 ./network-commit-update.sh "${NETWORK_CHN_PATH}/org2_update_in_envelope.pb"
 
-# Peer2 joins channel
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer2.yaml"
 ./network-join-peer.sh
 ./network-set-anchor-peer.sh
+./chaincode-install.sh
 
-./chaincode-install.sh # Install on the new peer (Peer2)
-
-# ----------------------------------------------------------------------------
-# PHASE 4: Onboard Organization 3
-# ----------------------------------------------------------------------------
-
+log_info "Adding Org3 with majority approval from Org1 and Org2"
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer3.yaml"
 ./network-prepare.sh "${NETWORK_CRP_PATH}/peer3.yaml"
 ./docker-up.sh "${NETWORK_CMP_PATH}/docker-compose-peer3.yaml"
 
-# Peer1 (or Peer2) handles the join request for Peer3
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
 ./network-join-request.sh "${NETWORK_CTX_PATH}/org3/configtx.yaml"
 ./network-approve-update.sh "${NETWORK_CHN_PATH}/org3_update_in_envelope.pb"
 
-# Existing members (Peer1 and Peer2) must approve the new configuration update
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer2.yaml"
 ./network-approve-update.sh "${NETWORK_CHN_PATH}/org3_update_in_envelope.pb"
 
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
 ./network-commit-update.sh "${NETWORK_CHN_PATH}/org3_update_in_envelope.pb"
 
-# Peer3 joins channel
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer3.yaml"
 ./network-join-peer.sh
 ./network-set-anchor-peer.sh
+./chaincode-install.sh
 
-./chaincode-install.sh # Install on the new peer (Peer3)
-
-# ----------------------------------------------------------------------------
-# PHASE 5: Finalize Chaincode Endorsement Policy
-# ----------------------------------------------------------------------------
-
-# 1. Re-approve on ALL 3 organizations to update endorsement policy
-for org in peer1 peer2 peer3; do
-    export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${org}.yaml"
-    ./chaincode-approve.sh
+log_info "Approving the final chaincode definition from all peer organizations"
+for organization in "${PEER_ORGS[@]}"; do
+    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${organization}.yaml" ./chaincode-approve.sh
 done
 
-# 2. Commit the updated definition
 export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
 ./chaincode-commit.sh
+
+log_info "Creating the Org1 application user through test-add-user.sh"
+./test-add-user.sh
+
+# test-add-user.sh runs in a child process, so reload peer1's derived
+# organization variables in this parent shell before resolving Alice's MSP.
+export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
+select_organization
+
+CHAINCODE_USER="alice"
+CHAINCODE_USER_MSP="$(get_org_dir)/users/${CHAINCODE_USER}@${ORG_DOMAIN}/msp"
+log_info "Running cc-test-v2 as application user '${CHAINCODE_USER}'"
+CORE_PEER_MSPCONFIGPATH_OVERRIDE="${CHAINCODE_USER_MSP}" ./test-chaincode-v2.sh
+
+log_success "3-peer/3-orderer CA-backed network is running"
+log_info "Application user '${CHAINCODE_USER}' was enrolled in Org1 and used to test cc-test-v2."

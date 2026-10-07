@@ -369,7 +369,7 @@ set_anchor_peer() {
     # Fetch the current channel configuration to add the anchor peer
     fetch_channel_config
 
-    jq '.channel_group.groups.Application.groups.'${ORG_NAME}'.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": [{"host": "'${ORG_ENDPOINT}'","port": '${ORG_LISTEN_PORT}'}]},"version": "0"}}' ${CURRENT} > ${MODIFIED}
+    jq '.channel_group.groups.Application.groups.'${ORG_NAME}'.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": [{"host": "'${ORG_HOSTNAME}.${ORG_DOMAIN}'","port": 7051}]},"version": "0"}}' ${CURRENT} > ${MODIFIED}
 
     # Create the anchor peer update transaction
     create_update_transaction ${ORG_NAME}

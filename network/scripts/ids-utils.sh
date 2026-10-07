@@ -134,16 +134,29 @@ verify_identity() {
 
     local org_dir=$(get_org_dir)
     local ids_dir=$(get_identity_dir)
-    local admin_private_key="${org_dir}/users/Admin@${ORG_DOMAIN}/msp/keystore/priv_sk"
-    local admin_public_cert="${ids_dir}/msp/admincerts/admin-cert.pem"
+    local admin_msp="${org_dir}/users/Admin@${ORG_DOMAIN}/msp"
+    local admin_private_key="${admin_msp}/keystore/priv_sk"
+    local admin_public_cert="${admin_msp}/signcerts/cert.pem"
+
+    # Fabric CA generates hash-named key files. cryptogen uses priv_sk and a
+    # domain-qualified certificate name, so retain both layouts as fallbacks.
+    if [[ ! -f "${admin_private_key}" ]]; then
+        admin_private_key=$(find "${admin_msp}/keystore" -maxdepth 1 -type f 2>/dev/null | head -n 1)
+    fi
+    if [[ ! -f "${admin_public_cert}" ]]; then
+        admin_public_cert=$(find "${admin_msp}/signcerts" -maxdepth 1 -type f 2>/dev/null | head -n 1)
+    fi
+    if [[ ! -f "${admin_public_cert}" ]]; then
+        admin_public_cert="${ids_dir}/msp/admincerts/admin-cert.pem"
+    fi
     
     if [ ! -f "${admin_public_cert}" ]; then
-        log_error "Admin public certificate for ${ORG_DOMAIN} not found."
+        log_error "Admin signing certificate for ${ORG_DOMAIN} not found in ${admin_msp}."
         exit 1
     fi
 
     if [ ! -f "${admin_private_key}" ]; then
-        log_error "Admin private key for ${ORG_DOMAIN} not found."
+        log_error "Admin private key for ${ORG_DOMAIN} not found in ${admin_msp}."
         exit 1
     fi
 

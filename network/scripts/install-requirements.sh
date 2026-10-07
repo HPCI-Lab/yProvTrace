@@ -79,6 +79,13 @@ pull_binaries() {
     fi
 }
 
+pull_ca_binaries() {
+    local ca_binary_file="hyperledger-fabric-ca-${PLATFORM}-${FABRIC_CA_VERSION}.tar.gz"
+    local ca_url="https://github.com/hyperledger/fabric-ca/releases/download/v${FABRIC_CA_VERSION}/${ca_binary_file}"
+    log_info "===> Downloading Fabric CA client version ${FABRIC_CA_VERSION}"
+    download "${ca_binary_file}" "${ca_url}" || exit 1
+}
+
 # ----------------------------------------------------------------------------
 # Validation: Docker Installation
 # ----------------------------------------------------------------------------
@@ -103,13 +110,20 @@ fi
 # ----------------------------------------------------------------------------
 # Install Hyperledger Fabric Binaries
 # ----------------------------------------------------------------------------
+OS=$(uname -s|tr '[:upper:]' '[:lower:]'|sed 's/mingw64_nt.*/windows/')
+ARCH=$(uname -m | sed 's/x86_64/amd64/g' | sed 's/aarch64/arm64/g')
+PLATFORM=${OS}-${ARCH}
+
 if [ ! -d "${NETWORK_BIN_PATH}" ]; then
     log_info "Hyperledger Fabric binaries not found. Installing requirements..."
-    OS=$(uname -s|tr '[:upper:]' '[:lower:]'|sed 's/mingw64_nt.*/windows/')
-    ARCH=$(uname -m | sed 's/x86_64/amd64/g' | sed 's/aarch64/arm64/g')
-    PLATFORM=${OS}-${ARCH}
     BINARY_FILE=hyperledger-fabric-${PLATFORM}-${FABRIC_VERSION}.tar.gz
     pull_binaries
 else
     log_info "Hyperledger Fabric binaries found at: ${NETWORK_BIN_PATH}. Skipping installation."
+fi
+
+if [ ! -x "${NETWORK_BIN_PATH}/fabric-ca-client" ]; then
+    pull_ca_binaries
+else
+    log_info "Fabric CA client found at: ${NETWORK_BIN_PATH}/fabric-ca-client. Skipping installation."
 fi

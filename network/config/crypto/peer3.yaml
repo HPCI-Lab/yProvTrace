@@ -4,7 +4,7 @@ PeerOrgs:
     MSPId: Org3MSP
     EnableNodeOUs: true
     Template:
-      Count: 1 # Default, don't change
+      Count: 1
       DefaultEndpoint: localhost
       SANS:
         - localhost
@@ -13,4 +13,4 @@ PeerOrgs:
         OperationsPort: 9056
     DefaultOrdererDomain: ord3.testbed.local
     Users:
-      Count: 2 # Number of users (excluding admin) per organization
+      Count: 0

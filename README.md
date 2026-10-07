@@ -143,9 +143,9 @@ network:
   name: "yprovtrace-network"
   channel: "mychannel"
   chaincode:
-    name: "cc-test"
+    name: "cc-test-v2"
     language: "javascript"
-    version: "1.0"
+    version: "1.1"
 
 docker:
   project: "testbed"
@@ -184,13 +184,16 @@ If not already done, install Fabric binaries and dependencies:
 
 #### Cryptographic Material Generation
 
-Each organization independently generates its private credentials:
+Prepare the three default peer organizations and three ordering organizations:
 
 ```bash
-./network-prepare.sh <organization-config.yaml>
+export ORG_CA_ADMIN_PASSWORD='replace-with-a-secret'
+./network-prepare.sh
 ```
 
-Private keys remain local, while public certificates are saved under `network/identities` in order to be shared.
+Each organization receives one network administrator and no initial application
+users. Private keys remain local, while public certificates are saved under
+`network/identities` in order to be shared.
 
 #### Genesis Block Generation (Leader Only)
 
@@ -332,7 +335,7 @@ Finally, `organization4` can remove its public identity from the shared folder a
 | Script | Description | Parameters | Example |
 |---------|--------------|-------------|----------|
 | `install-requirements.sh` | Installs Hyperledger Fabric binaries and dependencies. | *(none)* | `./install-requirements.sh` |
-| `network-prepare.sh` | Generates the private credentials and create/add the public identity to the shared folder. | `<organization-config.yaml>` | `./network-prepare.sh organization.yaml` |
+| `network-prepare.sh` | Uses per-organization Fabric CAs to prepare the default 3-peer/3-orderer topology, or one explicitly selected organization. | `[organization-config.yaml]` | `./network-prepare.sh`<br>`./network-prepare.sh organization.yaml` |
 | `network-init.sh` | Creates the genesis block (leader org only). | *(none)* | `./network-init.sh` |
 | `docker-up.sh` | Starts network containers defined in the given compose file. | `<docker-compose.yaml>` | `./docker-up.sh docker-compose-org1.yaml` |
 | `docker-down.sh` | Stops and removes containers for the given organization. If the optional `--hard` flag is provided, it also prunes volumes and removes orphaned containers. | `<docker-compose.yaml>` `[--hard]` | `./docker-down.sh docker-compose-org1.yaml`<br>`./docker-down.sh docker-compose-org1.yaml --hard` |
@@ -366,7 +369,7 @@ In this scenario, three peer organizations (`R1, R2, R3`) and three ordering org
 
 On this channel, R1, R2 and R3 will join peers, named P1, P2 and P3, to the **channel** `mychannel`, while R4, R5 and R6 owns respectively O1, O2 and O3, the ordering services of the channel. All of these nodes will contain a copy of the **ledger** (`L1`) of the channel, which is where transactions are recorded.
 
-In this example, the chaincode `cc-test` has been installed on every peer.
+In this example, the chaincode `cc-test-v2` has been installed on every peer.
 
 ![](./documentation/assets/architecture.png)
 ---
@@ -378,6 +381,81 @@ In this example, the chaincode `cc-test` has been installed on every peer.
 - **TLS enabled** for all communications
 - **Digital signatures** are used for identity verification
 - **MSP-based** access control
+
+### Dynamic user identities with Fabric CA
+
+The network runs one independent Fabric CA for each organization. During a
+fresh network setup, that CA generates the organization's trust root and issues
+the MSP and TLS identities for its peer or orderer, its Fabric administrator,
+and dynamically managed application users. The resulting public MSP is used by
+`configtxgen`, so CA-issued users are trusted from the genesis block onward.
+
+Run the commands from `network/scripts`. Keep the bootstrap password outside
+the repository:
+
+```bash
+export ORG_CA_ADMIN_PASSWORD='replace-with-a-secret'
+
+# Prepare three peer organizations and three ordering organizations:
+./network-prepare.sh
+
+# Select Org1 for subsequent identity operations:
+export ORG_CONFIG_FILE=../config/crypto/peer1.yaml
+./ca-register-user.sh alice alice-enrollment-secret client
+./ca-enroll-user.sh alice alice-enrollment-secret
+./ca-list-users.sh
+```
+
+Use the enrolled user as the signer for the test invoke/query scripts:
+
+```bash
+export CORE_PEER_MSPCONFIGPATH_OVERRIDE="../organizations/peerOrganizations/org1.testbed.local/users/alice@org1.testbed.local/msp"
+./chaincode-invoke.sh
+./chaincode-query.sh
+unset CORE_PEER_MSPCONFIGPATH_OVERRIDE
+```
+
+The default preparation creates `Org1`, `Org2`, and `Org3`, plus `Ord1`,
+`Ord2`, and `Ord3`. Each organization gets exactly one Fabric network
+administrator named `Admin`; it does not receive any application users.
+
+For runtime onboarding, prepare only the new organization by passing its
+configuration explicitly:
+
+```bash
+./network-prepare.sh ../config/crypto/peer4.yaml
+```
+
+The resulting user MSP is stored under
+`network/organizations/.../users/alice@<organization-domain>/msp`. Registration
+secrets are bootstrap credentials and should be communicated securely and used
+only for enrollment.
+
+Fabric identities cannot be deleted from ledger history. Disable an active
+identity by revoking it and publishing the generated CRL:
+
+```bash
+./ca-revoke-user.sh alice privilegewithdrawn
+./ca-create-crl-update.sh
+
+# Required channel administrators sign the generated envelope:
+./network-approve-update.sh ../channel/org1crl_update_in_envelope.pb
+
+# One authorized organization submits it:
+./network-commit-update.sh ../channel/org1crl_update_in_envelope.pb
+```
+
+Revocation at the CA immediately prevents future enrollment by that identity.
+Transaction certificates are rejected network-wide only after the CRL has been
+committed into the channel MSP. CA state is persisted under `network/ca`; back
+up this directory and the organization's CA private key in production.
+
+For a clean rebuild, remove or archive the old `network/organizations`,
+`network/identities`, `network/channel`, and `network/ca` material before
+preparing every organization. The preparation scripts intentionally refuse to
+overwrite existing node/admin credentials. The previous generator remains
+available explicitly as `network-prepare.sh --cryptogen <config>`, but CA and
+cryptogen roots must not be mixed in one newly created channel.
 
 ---
 
@@ -436,9 +514,9 @@ The "broken pipe" occurs because the internal library Fabric uses to talk to Doc
 
 ```
 chaincode/
-└── 📁 cc-test/                     # Chaincode name
+└── 📁 cc-test-v2/                  # Chaincode name
     ├── 📁 lib/                     # Business logic
-    │   └── resource-events.js      
+    │   └── resource-events-v2.js
     └── index.js
 ```
 
@@ -453,19 +531,35 @@ chaincode/
 | `ReadResource` | Evaluate | Retrieves a resource by PID |
 | `GetResourcesByTimestamp` | Evaluate | Returns resources within a timestamp range |
 | `ReadAllResources` | Evaluate | Returns all resources |
+| `GetResourceHistory` | Evaluate | Returns resource history with transaction metadata |
 | `ResourceExists` | Evaluate | Checks if a resource exists |
 
 ### Resource Schema
 
+`cc-test-v2` uses Unix timestamps in seconds. `updatedAt` and `updatedBy` are added after a status update.
+
 ```javascript
 {
-    pid: string,           
-    uri: string,           
-    hash: string,          
-    timestamp: string,     
-    owners: string[],      
-    status: integer        // 0: unknown, 1: valid, 2: revoked
-}
+  pid: string;
+  uri: string;
+  hash: string;
+
+  timestamp: integer;
+
+  owners: string[];
+  status: integer;         // 0: unknown, 1: valid, 2:revoked
+
+  creator: {
+    id: string;
+    mspId: string;
+  };
+
+  updatedAt: integer;
+  updatedBy: {
+    id: string;
+    mspId: string;
+  };
+};
 ```
 
 ---
@@ -507,4 +601,3 @@ This work builds upon the Hyperledger Fabric ecosystem and related open-source c
 [node-logo]: https://img.shields.io/badge/Node.js-v18+-339933?style=for-the-badge&logo=node.js&logoColor=white
 [javascript-logo]: https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black
 [license-logo]: https://img.shields.io/badge/License-GPL%20v3-yellow?style=for-the-badge
-

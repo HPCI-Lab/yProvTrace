@@ -211,6 +211,7 @@ invoke_chaincode() {
     TLS_IDENTITIES=$(get_tls_identities)
 
     get_default_orderer
+    export ALLOW_MSP_SIGNER_OVERRIDE=true
     set_peer_env 
 
     peer chaincode invoke \
@@ -234,18 +235,17 @@ invoke_chaincode() {
 # Query Chaincode (Test Function)
 # ----------------------------------------------------------------------------
 # Description: Test function to query chaincode state
-# Purpose: Reads a sample resource entry for verification
-# Note: Queries the resource created by invoke_chaincode()
+# Purpose: Reads all V2 resources as a read-only connectivity check
 # Exit: 1 if commit fails
 # ----------------------------------------------------------------------------
 query_chaincode() {
 
     # Test function to query the chaincode
 
-    PID="pid_test_${ORG_DOMAIN}"
-    JSON_PAYLOAD="{\"Args\":[\"ReadResource\",\"$PID\"]}"
+    JSON_PAYLOAD='{"Function":"ResourceEventsV2:ReadAllResources","Args":[]}'
     
     get_default_orderer
+    export ALLOW_MSP_SIGNER_OVERRIDE=true
     set_peer_env 
 
     peer chaincode query \

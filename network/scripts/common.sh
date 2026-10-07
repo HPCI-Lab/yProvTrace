@@ -83,11 +83,14 @@ load_network_config() {
     export NETWORK_PKG_PATH=${NETWORK_ROOT}$(yq -r '.paths.packages' "$config_file")
     export NETWORK_TMP_PATH=${NETWORK_ROOT}$(yq -r '.paths.templates' "$config_file")
     export NETWORK_CRP_PATH=${NETWORK_CFG_PATH}$(yq -r '.paths.crypto' "$config_file")
+    export NETWORK_CA_PATH=${NETWORK_ROOT}$(yq -r '.paths.ca // "/ca"' "$config_file")
 
     # Export fabric-specific variables
     export PATH="${PATH}:${NETWORK_BIN_PATH}"
     export FABRIC_CFG_PATH="${NETWORK_CFG_PATH}/fabric"
     export FABRIC_VERSION=$(yq -r '.fabric.version' "$config_file")
+    export FABRIC_CA_VERSION=$(yq -r '.fabric.ca.version // "1.5.17"' "$config_file")
+    export FABRIC_CA_PORT_OFFSET=$(yq -r '.fabric.ca.portOffset // 3000' "$config_file")
     
     # Export docker-specific variables
     export COMPOSE_BAKE=true
@@ -145,6 +148,13 @@ load_organization_config() {
     export ORG_LISTEN_PORT=$(echo "$specs" | yq -r '.Ports.ListenPort')
     export ORG_OPERATIONS_PORT=$(echo "$specs" | yq -r '.Ports.OperationsPort')
     export LAST_ORG_CONFIG_FILE="${org_config_file}"
+
+    # Fabric CA defaults. Any value can be overridden before sourcing a script.
+    export ORG_CA_NAME="${ORG_CA_NAME:-ca-${ORG_NAME,,}}"
+    export ORG_CA_HOSTNAME="${ORG_CA_HOSTNAME:-ca.${ORG_DOMAIN}}"
+    export ORG_CA_PORT="${ORG_CA_PORT:-$((ORG_LISTEN_PORT + FABRIC_CA_PORT_OFFSET))}"
+    export ORG_CA_URL="${ORG_CA_URL:-https://localhost:${ORG_CA_PORT}}"
+    export ORG_CA_DOCKER_PROJECT="${ORG_CA_DOCKER_PROJECT:-${DOCKER_PROJECT_NAME}-${ORG_NAME,,}-ca}"
     
     log_debug "Organization configuration loaded: ${ORG_NAME}"
 }
@@ -333,7 +343,14 @@ set_peer_env() {
     export CORE_PEER_TLS_ROOTCERT_FILE="${identity_dir}/msp/tlscacerts/tlsca.${ORG_DOMAIN}-cert.pem"
 
     # * This is private info, so it should be retrieved from organizations folder
-    export CORE_PEER_MSPCONFIGPATH="${org_dir}/users/Admin@${ORG_DOMAIN}/msp"
+    # Administrative and lifecycle operations must always use the organization
+    # Admin. Only explicitly marked client operations may honor a signer
+    # override (see invoke_chaincode/query_chaincode in cc-utils.sh).
+    if [[ "${ALLOW_MSP_SIGNER_OVERRIDE:-false}" == "true" && -n "${CORE_PEER_MSPCONFIGPATH_OVERRIDE}" ]]; then
+        export CORE_PEER_MSPCONFIGPATH="${CORE_PEER_MSPCONFIGPATH_OVERRIDE}"
+    else
+        export CORE_PEER_MSPCONFIGPATH="${org_dir}/users/Admin@${ORG_DOMAIN}/msp"
+    fi
     
     # Additional peer configuration
     export PEER_HOSTNAME="${ORG_HOSTNAME}.${ORG_DOMAIN}"

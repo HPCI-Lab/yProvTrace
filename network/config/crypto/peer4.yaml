@@ -1,0 +1,19 @@
+PeerOrgs:
+  - Name: Org4
+    Domain: org4.testbed.local
+    MSPId: Org4MSP
+    EnableNodeOUs: true
+
+    Template:
+      Count: 1
+      DefaultEndpoint: localhost
+      SANS:
+        - localhost
+      Ports:
+        ListenPort: 7057
+        OperationsPort: 9057
+
+    DefaultOrdererDomain: ord1.testbed.local
+
+    Users:
+      Count: 0

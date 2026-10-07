@@ -1,7 +1,7 @@
 {
-    "name": "resource-events",
+    "name": "resource-events-v2",
     "version": "1.0.0",
-    "description": "Resource-Events contract implemented in JavaScript",
+    "description": "Resource-Events V2 contract implemented in JavaScript",
     "main": "index.js",
     "scripts": {
         "start": "fabric-chaincode-node start"

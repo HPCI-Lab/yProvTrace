@@ -1,0 +1,39 @@
+volumes:
+  peer4_data:
+
+networks:
+  fabric_net:
+    name: fabric_net
+
+services:
+  peer4_container:
+    container_name: ${ORG_HOSTNAME}.${ORG_DOMAIN}
+    image: hyperledger/fabric-peer:${FABRIC_VERSION}
+    labels:
+      service: hyperledger-fabric
+    environment:
+      # General variables
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric_net
+      # Peer specific variables
+      - CORE_PEER_LOCALMSPID=${ORG_MSP_ID}
+      - CORE_PEER_ID=${ORG_HOSTNAME}.${ORG_DOMAIN}
+      - CORE_PEER_ADDRESS=${ORG_HOSTNAME}.${ORG_DOMAIN}:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=${ORG_HOSTNAME}.${ORG_DOMAIN}:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=${ORG_HOSTNAME}.${ORG_DOMAIN}:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=${ORG_HOSTNAME}.${ORG_DOMAIN}:7051
+      - CORE_OPERATIONS_LISTENADDRESS=${ORG_HOSTNAME}.${ORG_DOMAIN}:9443
+    working_dir: /root
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
+      - ../organizations/peerOrganizations/${ORG_DOMAIN}/peers/${ORG_HOSTNAME}.${ORG_DOMAIN}:/etc/hyperledger/fabric
+      - peer4_data:/var/hyperledger
+    ports:
+      - ${ORG_LISTEN_PORT}:7051
+      - ${ORG_OPERATIONS_PORT}:9443
+    networks:
+      - fabric_net

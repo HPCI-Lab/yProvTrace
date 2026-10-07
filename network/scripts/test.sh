@@ -6,7 +6,7 @@
 # Description:
 #   This script automates a full lifecycle test of the yProvTrace network:
 #   1. Bootstraps a base network (1 Peer Org, 3 Orderer Orgs).
-#   2. Deploys and verifies the 'cc-test' chaincode.
+#   2. Deploys and verifies the 'cc-test-v2' chaincode.
 #   3. Dynamically adds a second organization ('peer2') to the running channel.
 #   4. Re-configures the chaincode endorsement for the new member.
 #   5. Dynamically removes 'peer2' and cleans up the environment.
@@ -15,6 +15,9 @@
 export ORG_CONFIG_FILE="NONE"
 
 source common.sh
+
+# Development-only bootstrap password used by the per-organization CAs.
+export ORG_CA_ADMIN_PASSWORD="${ORG_CA_ADMIN_PASSWORD:-test-ca-admin-password}"
 
 # ----------------------------------------------------------------------------
 # PHASE 1: Environment Cleanup & Pre-flight Checks
@@ -36,8 +39,12 @@ ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml" \
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer2.yaml" \
     ./docker-down.sh "${NETWORK_CMP_PATH}/docker-compose-peer2.yaml" --hard
 
+for org in orderer1 orderer2 orderer3 peer1 peer2; do
+    ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/${org}.yaml" ./ca-down.sh || true
+done
+
 # Wipe existing ledger data, channel artifacts, and identity certificates
-sudo rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
+sudo rm -rf ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH} ${NETWORK_CA_PATH}
 mkdir -p ${NETWORK_ORG_PATH} ${NETWORK_IDS_PATH} ${NETWORK_CHN_PATH}
 
 # ----------------------------------------------------------------------------
@@ -94,14 +101,13 @@ export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
 # ----------------------------------------------------------------------------
 # PHASE 4: Chaincode Deployment (Initial)
 # ----------------------------------------------------------------------------
+./chaincode-package.sh # Package cc-test-v2
 ./chaincode-install.sh # Install the chaincode on peer1
 ./chaincode-approve.sh # Approve the chaincode for peer1
 ./chaincode-commit.sh # Commit the chaincode definition
 
-# Sanity check: Invoke a transaction and query the state
-./chaincode-invoke.sh
-sleep 5
-./chaincode-query.sh
+# Exercise the V2 transactions and indexes.
+./test-chaincode-v2.sh
 
 # ----------------------------------------------------------------------------
 # PHASE 5: Dynamic Membership Expansion (Adding Peer2)
@@ -144,11 +150,9 @@ export ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer1.yaml"
 # 10. Commit the chaincode to include the new organization in the endorsement policy
 ./chaincode-commit.sh
 
-# Test the chaincode invocation with the new organization
+# Test the V2 chaincode from the new organization
 ORG_CONFIG_FILE="${NETWORK_CRP_PATH}/peer2.yaml" \
-    ./chaincode-invoke.sh
-
-sleep 5 
+    ./test-chaincode-v2.sh
 
 # ----------------------------------------------------------------------------
 # PHASE 6: Dynamic Membership Reduction (Removing Peer2)

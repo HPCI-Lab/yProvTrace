@@ -1,0 +1,14 @@
+NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: ${CA_CERT}
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: ${CA_CERT}
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: ${CA_CERT}
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: ${CA_CERT}
+    OrganizationalUnitIdentifier: orderer

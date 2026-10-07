@@ -1,0 +1,29 @@
+networks:
+  fabric_net:
+    name: fabric_net
+
+services:
+  ca:
+    container_name: ${ORG_CA_HOSTNAME}
+    image: hyperledger/fabric-ca:${FABRIC_CA_VERSION}
+    labels:
+      service: hyperledger-fabric-ca
+      organization: ${ORG_MSP_ID}
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=${ORG_CA_NAME}
+      - FABRIC_CA_SERVER_CSR_CN=${ORG_CA_HOSTNAME}
+      - FABRIC_CA_SERVER_CSR_HOSTS=${ORG_CA_HOSTNAME},localhost
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - CA_ADMIN_USER=${ORG_CA_ADMIN_USER}
+      - CA_ADMIN_PASSWORD=${ORG_CA_ADMIN_PASSWORD}
+    command: >-
+      sh -c 'fabric-ca-server start
+      -b "$${CA_ADMIN_USER}:$${CA_ADMIN_PASSWORD}"
+      --port 7054'
+    volumes:
+      - ${ORG_CA_HOME}:/etc/hyperledger/fabric-ca-server
+    ports:
+      - ${ORG_CA_PORT}:7054
+    networks:
+      - fabric_net

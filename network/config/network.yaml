@@ -2,15 +2,18 @@ network:
   name: "yprovtrace-network"
   channel: "mychannel"
   chaincode:
-    name: "cc-test"
+    name: "cc-test-v2"
     language: "javascript"
-    version: "1.0"
+    version: "1.1"
 
 docker:
   project: "testbed"
 
 fabric:
   version: "2.5.14"
+  ca:
+    version: "1.5.17"
+    portOffset: 3000
 
 paths:
   bin: /bin
@@ -23,3 +26,4 @@ paths:
   organizations: /organizations
   packages: /packages
   templates: /templates
+  ca: /ca

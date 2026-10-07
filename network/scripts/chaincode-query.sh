@@ -4,8 +4,8 @@
 # yProvTrace: Chaincode Query Script
 # ============================================================================
 # Description:
-#   Test script to query chaincode state. This reads a sample resource
-#   entry from the ledger for verification purposes.
+#   Test script to query all cc-test-v2 resources for a read-only identity
+#   and connectivity check.
 #
 # Requirements:
 #   - Chaincode must be committed on the channel
@@ -14,7 +14,7 @@
 #
 # Steps:
 #   1. Resolve chaincode sequence number
-#   2. Query test chaincode function (ReadResource)
+#   2. Query the ResourceEventsV2 ReadAllResources transaction
 #
 # Note: This is a placeholder implementation for testing
 # ============================================================================
